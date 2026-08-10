@@ -53,8 +53,12 @@ Commands:
                         <serial> (must be the NEW device)
   status                Show current state of all files/counts
 
-All <serial> args also accept a saved label (see ../devices.sh init),
-and are optional if only one ADB device is connected.
+All <serial> args also accept a saved label (see ./devices.sh init).
+If you've tagged devices with roles via 'devices.sh init' or
+'devices.sh set-role <label> old|new', these commands need no arg at
+all — they auto-pick whichever connected device is registered for
+that role. Otherwise they fall back to auto-picking when only one
+device is connected.
 
 Env:
   MIGRATION_STATE_DIR   Override the state directory (default: ./migration_state)
@@ -68,7 +72,7 @@ require_adb() {
 cmd_scan_old() {
     require_adb
     local serial
-    serial="$(resolve_device "${1:-}")" || exit 1
+    serial="$(resolve_device_for_role "${1:-}" old)" || exit 1
 
     echo "Scanning OLD device ($serial)..."
     adb -s "$serial" shell pm list packages -3 -i < /dev/null | tr -d '\r' > "$OLD_FILE"
@@ -80,7 +84,7 @@ cmd_scan_old() {
 cmd_scan_new() {
     require_adb
     local serial
-    serial="$(resolve_device "${1:-}")" || exit 1
+    serial="$(resolve_device_for_role "${1:-}" new)" || exit 1
 
     echo "Scanning NEW device ($serial)..."
     adb -s "$serial" shell pm list packages -3 < /dev/null | sed 's/^package://' | tr -d '\r' | sort -u > "$NEW_FILE"
@@ -232,7 +236,7 @@ cmd_pull() {
     [[ -f "$CONFIG_FILE" ]] || { echo "Missing $CONFIG_FILE — run 'plan' first."; exit 1; }
     require_adb
     local serial
-    serial="$(resolve_device "${1:-}")" || exit 1
+    serial="$(resolve_device_for_role "${1:-}" old)" || exit 1
 
     mkdir -p "$APK_DIR"
     local pulled=0 failed=0
@@ -280,7 +284,7 @@ cmd_install() {
     [[ -d "$APK_DIR" ]] || { echo "Missing $APK_DIR — run 'pull' first."; exit 1; }
     require_adb
     local serial
-    serial="$(resolve_device "${1:-}")" || exit 1
+    serial="$(resolve_device_for_role "${1:-}" new)" || exit 1
 
     local installed=0 failed=0 missing=0
 

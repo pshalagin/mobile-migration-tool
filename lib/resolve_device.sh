@@ -7,10 +7,14 @@
 # connected, that device is used automatically — no config needed for
 # the single-device case.
 #
-# devices.tsv columns: label, serial, model, catalog
+# devices.tsv columns: label, serial, model, catalog, role
 # `catalog` is a repo-root-relative path to that device's debloat
 # packages.tsv (copied from a template at init time) — resolved via
 # catalog_for_serial() below.
+# `role` is "old", "new", or empty — set at init time (or later via
+# `devices.sh set-role`) so migrate.sh's scan-old/scan-new/pull/install
+# can auto-resolve which device to use with zero args, permanently,
+# instead of asking for a label every single run.
 #
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DEVICES_FILE="${DEVICES_FILE:-$REPO_ROOT/devices.tsv}"
@@ -37,6 +41,18 @@ catalog_for_serial() {
     local serial="$1"
     [[ -f "$DEVICES_FILE" ]] || return 0
     awk -F'\t' -v s="$serial" 'NR>1 && $2==s {print $4}' "$DEVICES_FILE"
+}
+
+role_for_serial() {
+    local serial="$1"
+    [[ -f "$DEVICES_FILE" ]] || return 0
+    awk -F'\t' -v s="$serial" 'NR>1 && $2==s {print $5}' "$DEVICES_FILE"
+}
+
+serial_for_role() {
+    local role="$1"
+    [[ -f "$DEVICES_FILE" ]] || return 1
+    awk -F'\t' -v r="$role" 'NR>1 && $5==r {print $2; found=1} END{exit !found}' "$DEVICES_FILE"
 }
 
 # Prints a resolved, connected serial on stdout; errors (with guidance)
@@ -86,4 +102,35 @@ resolve_device() {
         echo "Tip: run ./devices.sh init once to label these, then just pass the label." >&2
         return 1
     fi
+}
+
+# Like resolve_device(), but for commands tied to a migration role
+# (old/new). If arg is given, behaves exactly like resolve_device().
+# If not, prefers whichever connected device is registered with this
+# role — set once via `devices.sh init` or `devices.sh set-role`, never
+# asked again after that.
+resolve_device_for_role() {
+    local arg="${1:-}" role="$2"
+
+    if [[ -n "$arg" ]]; then
+        resolve_device "$arg"
+        return $?
+    fi
+
+    local role_serial connected
+    connected="$(list_connected)"
+    if role_serial="$(serial_for_role "$role")" && [[ -n "$role_serial" ]]; then
+        if echo "$connected" | grep -qx "$role_serial"; then
+            echo "$role_serial"; return 0
+        else
+            local lbl
+            lbl="$(label_for_serial "$role_serial")"
+            echo "The device registered as '$role' (${lbl:-$role_serial}) is not currently connected." >&2
+            echo "Connected: $(echo "$connected" | tr '\n' ' ')" >&2
+            return 1
+        fi
+    fi
+
+    # No device registered for this role — fall back to plain resolution
+    resolve_device ""
 }

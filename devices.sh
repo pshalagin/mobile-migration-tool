@@ -1,19 +1,26 @@
 #!/usr/bin/env bash
 #
 # devices.sh — one-time-ish setup: detect connected ADB device(s),
-# save serial+model under a label you choose, and pick a debloat
-# package-catalog template to seed that device's live catalog.
+# save serial+model under a label you choose, pick a debloat
+# package-catalog template to seed that device's live catalog, and
+# optionally tag it as the "old" or "new" device for migrate.sh so
+# scan-old/scan-new/pull/install never need a device arg again.
 #
-# devices.tsv columns: label, serial, model, catalog
+# devices.tsv columns: label, serial, model, catalog, role
 # `catalog` is a repo-root-relative path (e.g. catalogs/redmi15c.tsv),
 # a per-device COPY of a templates/*.tsv file — editable independently
 # per device without touching the template it came from.
+# `role` is "old", "new", or empty. At most one device holds each role
+# at a time — assigning it to a new device clears it from the old one.
 #
 # Usage:
-#   ./devices.sh init              Detect + label + pick catalog template
-#   ./devices.sh list              Show saved devices
-#   ./devices.sh forget <label>    Remove a saved device
-#   ./devices.sh templates         List available catalog templates
+#   ./devices.sh init                    Detect + label + catalog + role
+#   ./devices.sh list                    Show saved devices
+#   ./devices.sh forget <label>          Remove a saved device
+#   ./devices.sh templates               List available catalog templates
+#   ./devices.sh set-role <label> <old|new|none>
+#                                         Assign/change a device's migration
+#                                         role without re-running init
 #
 set -uo pipefail
 
@@ -28,12 +35,35 @@ usage() {
 Usage: $0 <command>
 
 Commands:
-  init              Detect connected ADB device(s), prompt for a label
-                     and a catalog template each, save to devices.tsv.
-  list              Show saved devices.
-  forget <label>    Remove a saved device by label.
-  templates         List available catalog templates ($TEMPLATES_DIR).
+  init                          Detect connected ADB device(s), prompt
+                                 for a label, catalog template, and
+                                 migration role (old/new/none) each.
+  list                          Show saved devices.
+  forget <label>                Remove a saved device by label.
+  templates                     List available catalog templates ($TEMPLATES_DIR).
+  set-role <label> <old|new|none>
+                                 Assign/change a device's migration role
+                                 after the fact, no re-init needed.
 EOF
+}
+
+# Upgrades an existing devices.tsv from the older 4-column schema
+# (before "role" existed) in place, and creates a fresh 5-column file
+# if none exists yet. Safe to call from every command.
+ensure_devices_schema() {
+    if [[ ! -f "$DEVICES_FILE" ]]; then
+        printf "label\tserial\tmodel\tcatalog\trole\n" > "$DEVICES_FILE"
+        return
+    fi
+    local header
+    header="$(head -1 "$DEVICES_FILE")"
+    if [[ "$header" != *$'\t'role ]]; then
+        local tmp
+        tmp="$(mktemp)"
+        awk -F'\t' 'BEGIN{OFS="\t"} NR==1{print $0,"role"; next} {print $0,""}' "$DEVICES_FILE" > "$tmp"
+        mv "$tmp" "$DEVICES_FILE"
+        echo "(upgraded devices.tsv to add the 'role' column — existing devices have no role set yet)" >&2
+    fi
 }
 
 cmd_templates() {
@@ -55,9 +85,9 @@ cmd_templates() {
 }
 
 pick_template() {
-    # Prints the chosen template's repo-root-relative catalogs/ path on
-    # stdout (empty if skipped). Everything else goes to stderr so it
-    # doesn't get captured by the caller's command substitution.
+    # Prints the chosen template name on stdout (empty if skipped).
+    # Everything else goes to stderr so it doesn't get captured by the
+    # caller's command substitution.
     local templates=()
     for f in "$TEMPLATES_DIR"/*.tsv; do
         [[ -f "$f" ]] && templates+=("$(basename "$f" .tsv)")
@@ -91,9 +121,51 @@ pick_template() {
     echo "${templates[$((choice - 1))]}"
 }
 
+pick_role() {
+    # Prints "old", "new", or "" (skip) on stdout.
+    echo "Is this the OLD (migration source) or NEW (migration destination) device?" >&2
+    echo "This gets saved — migrate.sh scan-old/scan-new/pull/install will then" >&2
+    echo "auto-pick this device by role and never ask again." >&2
+    echo "  1) old" >&2
+    echo "  2) new" >&2
+    echo "  0) neither / skip" >&2
+
+    local choice
+    read -r -p "Choice [0]: " choice
+    choice="${choice:-0}"
+    case "$choice" in
+        1) echo "old" ;;
+        2) echo "new" ;;
+        *) echo "" ;;
+    esac
+}
+
+# Sets $label's role to $role (possibly empty = clear), clearing that
+# same role from any other device first since only one device can hold
+# a given role at a time.
+assign_role() {
+    local label="$1" role="$2"
+
+    if [[ -n "$role" ]]; then
+        local existing
+        existing="$(awk -F'\t' -v r="$role" -v l="$label" 'NR>1 && $5==r && $1!=l {print $1}' "$DEVICES_FILE")"
+        [[ -n "$existing" ]] && echo "Role '$role' was assigned to '$existing' — reassigning to '$label'."
+    fi
+
+    local tmp
+    tmp="$(mktemp)"
+    awk -F'\t' -v OFS='\t' -v l="$label" -v r="$role" '
+        NR==1 { print; next }
+        $1==l         { $5=r }
+        $5==r && r!="" && $1!=l { $5="" }
+        { print }
+    ' "$DEVICES_FILE" > "$tmp"
+    mv "$tmp" "$DEVICES_FILE"
+}
+
 cmd_init() {
     command -v adb >/dev/null 2>&1 || { echo "adb not found in PATH."; exit 1; }
-    [[ -f "$DEVICES_FILE" ]] || printf "label\tserial\tmodel\tcatalog\n" > "$DEVICES_FILE"
+    ensure_devices_schema
     mkdir -p "$CATALOGS_DIR"
 
     local connected
@@ -115,7 +187,7 @@ cmd_init() {
     for serial in "${serials[@]}"; do
         if awk -F'\t' -v s="$serial" 'NR>1 && $2==s{f=1} END{exit !f}' "$DEVICES_FILE"; then
             existing_label="$(label_for_serial "$serial")"
-            echo "Already known: $serial -> '$existing_label' (run 'forget $existing_label' first to relabel)"
+            echo "Already known: $serial -> '$existing_label' (run 'forget $existing_label' first to relabel, or 'set-role' to change its role)"
             continue
         fi
 
@@ -140,8 +212,12 @@ cmd_init() {
             echo "Seeded $catalog from template '$template' — edit it freely, it's this device's own copy."
         fi
 
-        printf "%s\t%s\t%s\t%s\n" "$label" "$serial" "$model" "$catalog" >> "$DEVICES_FILE"
-        echo "Saved: $label -> $serial"
+        local role
+        role="$(pick_role)"
+
+        printf "%s\t%s\t%s\t%s\t%s\n" "$label" "$serial" "$model" "$catalog" "$role" >> "$DEVICES_FILE"
+        [[ -n "$role" ]] && assign_role "$label" "$role"   # clears the role from any other device
+        echo "Saved: $label -> $serial${role:+ (role: $role)}"
     done
 
     echo
@@ -149,21 +225,46 @@ cmd_init() {
 }
 
 cmd_list() {
-    if [[ ! -f "$DEVICES_FILE" ]] || [[ "$(wc -l < "$DEVICES_FILE")" -le 1 ]]; then
+    ensure_devices_schema
+    if [[ "$(wc -l < "$DEVICES_FILE")" -le 1 ]]; then
         echo "No devices saved yet. Run: $0 init"
         return
     fi
-    printf "%-15s %-22s %-16s %s\n" "LABEL" "SERIAL" "MODEL" "CATALOG"
-    awk -F'\t' 'NR>1{printf "%-15s %-22s %-16s %s\n",$1,$2,$3,$4}' "$DEVICES_FILE"
+    printf "%-15s %-22s %-16s %-22s %s\n" "LABEL" "SERIAL" "MODEL" "CATALOG" "ROLE"
+    awk -F'\t' 'NR>1{printf "%-15s %-22s %-16s %-22s %s\n",$1,$2,$3,$4,$5}' "$DEVICES_FILE"
 }
 
 cmd_forget() {
     local label="${1:-}"
     [[ -z "$label" ]] && { echo "Usage: $0 forget <label>"; exit 1; }
-    [[ -f "$DEVICES_FILE" ]] || { echo "No devices saved yet."; exit 1; }
+    ensure_devices_schema
     tmp="$(mktemp)"
     awk -F'\t' -v l="$label" 'NR==1 || $1!=l' "$DEVICES_FILE" > "$tmp" && mv "$tmp" "$DEVICES_FILE"
     echo "Forgot '$label' (if it existed). Its catalogs/$label.tsv, if any, was left in place — delete manually if you don't want it."
+}
+
+cmd_set_role() {
+    local label="${1:-}" role="${2:-}"
+    if [[ -z "$label" || -z "$role" ]]; then
+        echo "Usage: $0 set-role <label> <old|new|none>"
+        exit 1
+    fi
+    ensure_devices_schema
+
+    if ! awk -F'\t' -v l="$label" 'NR>1 && $1==l{f=1} END{exit !f}' "$DEVICES_FILE"; then
+        echo "No device labeled '$label'. Run '$0 list' to see saved devices."
+        exit 1
+    fi
+
+    case "$role" in
+        old|new) : ;;
+        none) role="" ;;
+        *) echo "Role must be 'old', 'new', or 'none'."; exit 1 ;;
+    esac
+
+    assign_role "$label" "$role"
+    echo "Set role for '$label': ${role:-none}"
+    cmd_list
 }
 
 CMD="${1:-}"
@@ -173,5 +274,6 @@ case "$CMD" in
     list) cmd_list "$@" ;;
     forget) cmd_forget "$@" ;;
     templates) cmd_templates "$@" ;;
+    set-role) cmd_set_role "$@" ;;
     *) usage; exit 1 ;;
 esac
