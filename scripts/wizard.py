@@ -128,21 +128,28 @@ def run(cmd, check=False, capture=False):
 
 
 # --------------------------------------------------------------------
-# app-name enrichment (Python port of migrate.sh's fetch_app_name /
-# extract_og_title — same fallback order: Play Store -> RuStore ->
-# F-Droid API) used by the layout-plan step. Kept separate from
-# migrate.sh's bash version rather than shelling out to it, since this
-# runs concurrently over the whole installed-package list rather than
-# migrate.sh's one-at-a-time migration_config.txt rows.
+# app-name enrichment (Python port of migrate.sh's fetch_app_info /
+# extract_og_title / extract_og_description — same fallback order:
+# Play Store -> RuStore -> F-Droid API) used by the layout-plan step.
+# Kept separate from migrate.sh's bash version rather than shelling
+# out to it, since this runs concurrently over the whole
+# installed-package list rather than migrate.sh's one-at-a-time
+# migration_config.txt rows — but reads/writes the SAME cache file
+# (state/app_info.tsv), so a package looked up once by either
+# migrate.sh's `enrich` or this step is never re-fetched by the other.
 # --------------------------------------------------------------------
 
+APP_INFO_FILE = STATE_DIR / "app_info.tsv"
+APP_INFO_FIELDS = ["package", "name", "description", "source", "fetched_at"]
+
 _OG_TITLE_TAG_RE = re.compile(r'<meta[^>]*property="og:title"[^>]*>')
+_OG_DESC_TAG_RE = re.compile(r'<meta[^>]*property="og:description"[^>]*>')
 _CONTENT_ATTR_RE = re.compile(r'content="([^"]*)"')
 _UA_HEADERS = {"User-Agent": "Mozilla/5.0"}
 
 
-def _extract_og_title(html):
-    tag = _OG_TITLE_TAG_RE.search(html)
+def _extract_meta(html, tag_re):
+    tag = tag_re.search(html)
     if not tag:
         return ""
     content = _CONTENT_ATTR_RE.search(tag.group(0))
@@ -158,20 +165,36 @@ def _fetch_url_text(url, headers=None, timeout=8):
         return ""
 
 
-def fetch_app_name(pkg):
-    """Real app name for pkg, or "" if not found anywhere. Same fallback
-    chain as migrate.sh: Google Play web listing, then RuStore, then
-    F-Droid's JSON API for FOSS apps not on either store."""
+def read_app_info_cache():
+    if not APP_INFO_FILE.exists():
+        return {}
+    with open(APP_INFO_FILE, newline="") as f:
+        return {r["package"]: r for r in csv.DictReader(f, delimiter="\t")}
+
+
+def write_app_info_cache(cache):
+    APP_INFO_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with open(APP_INFO_FILE, "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=APP_INFO_FIELDS, delimiter="\t")
+        w.writeheader()
+        for pkg, row in sorted(cache.items()):
+            w.writerow({k: row.get(k, "") for k in APP_INFO_FIELDS})
+
+
+def fetch_app_info(pkg):
+    """Real (name, description, source) for pkg, fetched fresh — no
+    cache check here, that's the caller's job (fetch_app_names below).
+    source is one of play/rustore/fdroid/none."""
     html = _fetch_url_text(
         f"https://play.google.com/store/apps/details?id={pkg}&hl=en", _UA_HEADERS)
-    name = _extract_og_title(html)
+    name = _extract_meta(html, _OG_TITLE_TAG_RE)
     if name:
-        return name
+        return name, _extract_meta(html, _OG_DESC_TAG_RE), "play"
 
     html = _fetch_url_text(f"https://www.rustore.ru/catalog/app/{pkg}", _UA_HEADERS)
-    name = _extract_og_title(html)
+    name = _extract_meta(html, _OG_TITLE_TAG_RE)
     if name:
-        return name
+        return name, _extract_meta(html, _OG_DESC_TAG_RE), "rustore"
 
     text = _fetch_url_text(f"https://f-droid.org/api/v1/packages/{pkg}")
     if text:
@@ -179,30 +202,60 @@ def fetch_app_name(pkg):
             data = json.loads(text)
             loc = data.get("localized", {})
             en = loc.get("en-US") or (next(iter(loc.values())) if loc else {})
-            return en.get("name", "")
+            name = en.get("name", "")
+            if name:
+                return name, en.get("summary", ""), "fdroid"
         except (ValueError, StopIteration):
             pass
-    return ""
+    return "", "", "none"
+
+
+def fetch_app_name(pkg):
+    """Back-compat single-value wrapper (name only, no caching)."""
+    return fetch_app_info(pkg)[0]
 
 
 def fetch_app_names(pkgs, workers=8, progress=True):
-    """Concurrently resolve real names for a list of packages. Returns
-    {pkg: name_or_empty_string}. Prints a running counter to stderr-ish
-    (via say) since this can take a couple of minutes over 100+ apps."""
+    """Resolve real names for a list of packages, consulting/populating
+    the shared state/app_info.tsv cache first — packages already
+    looked up by this or migrate.sh's `enrich` are free. Only
+    uncached packages hit the network, concurrently. Returns
+    {pkg: name_or_empty_string}."""
+    cache = read_app_info_cache()
     results = {}
-    total = len(pkgs)
+    to_fetch = []
+    for p in pkgs:
+        row = cache.get(p)
+        if row is not None:
+            results[p] = row.get("name", "")
+        else:
+            to_fetch.append(p)
+
+    if progress and cache:
+        say(f"  {len(pkgs) - len(to_fetch)}/{len(pkgs)} already cached from a previous run.")
+
+    if not to_fetch:
+        return results
+
+    total = len(to_fetch)
     done = 0
+    now = __import__("datetime").datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
     with ThreadPoolExecutor(max_workers=workers) as pool:
-        futures = {pool.submit(fetch_app_name, p): p for p in pkgs}
+        futures = {pool.submit(fetch_app_info, p): p for p in to_fetch}
         for fut in as_completed(futures):
             pkg = futures[fut]
             try:
-                results[pkg] = fut.result()
+                name, description, source = fut.result()
             except Exception:
-                results[pkg] = ""
+                name, description, source = "", "", "none"
+            results[pkg] = name
+            cache[pkg] = {"package": pkg, "name": name, "description": description,
+                          "source": source, "fetched_at": now}
             done += 1
             if progress and (done % 10 == 0 or done == total):
                 say(f"  looked up {done}/{total} app names...")
+
+    write_app_info_cache(cache)
     return results
 
 
