@@ -220,17 +220,17 @@ com.xiaomi.bluetooth	keep	hardware-critical	Bluetooth stack
 com.xiaomi.xmsf	keep	hardware-critical	OTA/security update chain, Xiaomi cloud/account services
 com.xiaomi.xmsfkeeper	keep	hardware-critical	OTA/security update chain
 com.miui.cloudservice	keep	hardware-critical	OTA/security update chain
-com.miui.cloudservice.sysbase	keep	hardware-critical	OTA/security update chain
+com.miui.cloudservice.sysbase	optional	hardware-critical	doesn't exist as a separate package on some builds (confirmed absent via `pm list packages -a` on Redmi 15C) — OTA chain is covered by com.miui.cloudservice above, no action needed if this one is missing
 com.xiaomi.micloud.sdk	keep	hardware-critical	OTA/security update chain
 com.miui.daemon	keep	hardware-critical	CORRECTION: this was also present in the removal list earlier (contradiction from iterative edits) — it is part of the OTA chain per the upstream README's own restore instructions. If already removed on your device, restore with: adb shell pm install-existing --user 0 com.miui.daemon
-com.xiaomi.gnss.polaris	keep	hardware-critical	faster/accurate GPS lock
+com.xiaomi.gnss.polaris	optional	hardware-critical	confirmed absent via `pm list packages -a` on Redmi 15C — not part of this build/SKU, not something debloat removed, no action needed
 com.xiaomi.finddevice	keep	hardware-critical	anti-theft Find My Device
 com.android.stk	keep	hardware-critical	SIM toolkit, needed for some carrier services/VoLTE
 com.miui.calculator	keep	hardware-critical	basic utility, not bloat
 com.mi.android.globalFileexplorer	keep	hardware-critical	basic utility, not bloat (note: capital F in package name on this build)
 com.google.android.googlequicksearchbox	keep	hardware-critical	Assistant/search bar
 com.google.android.tts	keep	hardware-critical	system TTS used by many apps
-com.google.ar.core	keep	hardware-critical	used by camera/measure-type features on some apps
+com.google.ar.core	optional	hardware-critical	confirmed absent via `pm list packages -a` on Redmi 15C — not preinstalled on this SKU (apps that need it pull it from Play Store on demand), not something debloat removed, no action needed
 com.miui.miwallpaper	keep	hardware-critical	removing breaks Set Wallpaper entirely, including lockscreen
 com.android.wallpaper.livepicker	keep	hardware-critical	wallpaper engine component
 com.android.wallpapercropper	keep	hardware-critical	wallpaper engine component
