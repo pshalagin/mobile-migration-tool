@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 #
-# lib/resolve_device.sh — shared device registry, sourced by every
-# tool script. Turns a saved label (from devices.tsv, set up via
-# ./devices.sh init) or a raw ADB serial into a validated, currently
-# connected serial. If no arg is given and exactly one device is
-# connected, that device is used automatically — no config needed for
-# the single-device case.
+# scripts/lib/resolve_device.sh — shared device registry, sourced by
+# every tool script. Turns a saved label (from state/devices.tsv, set
+# up via ./run.sh devices init) or a raw ADB serial into a validated,
+# currently connected serial. If no arg is given and exactly one
+# device is connected, that device is used automatically — no config
+# needed for the single-device case.
 #
-# devices.tsv columns: label, serial, model, catalog, role
+# state/devices.tsv columns: label, serial, model, catalog, role
 # `catalog` is a repo-root-relative path to that device's debloat
 # packages.tsv (copied from a template at init time) — resolved via
 # catalog_for_serial() below.
@@ -16,8 +16,8 @@
 # can auto-resolve which device to use with zero args, permanently,
 # instead of asking for a label every single run.
 #
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DEVICES_FILE="${DEVICES_FILE:-$REPO_ROOT/devices.tsv}"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+DEVICES_FILE="${DEVICES_FILE:-$REPO_ROOT/state/devices.tsv}"
 
 list_connected() {
     adb devices | awk 'NR>1 && $2=="device" {print $1}'
@@ -99,7 +99,7 @@ resolve_device() {
             lbl="$(label_for_serial "$s")"
             echo " - $s${lbl:+ ($lbl)}" >&2
         done <<< "$connected"
-        echo "Tip: run ./devices.sh init once to label these, then just pass the label." >&2
+        echo "Tip: run ./run.sh devices init once to label these, then just pass the label." >&2
         return 1
     fi
 }

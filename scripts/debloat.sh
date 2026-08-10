@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 #
-# debloat.sh — declarative, idempotent ADB debloat reconciler.
+# scripts/debloat.sh — declarative, idempotent ADB debloat reconciler.
+# Run via ./run.sh debloat <command> — see run.sh at the repo root.
 #
 # Each device gets its own catalog (package <TAB> desired state <TAB>
 # category <TAB> note), seeded from a templates/*.tsv template at
-# ./devices.sh init time and stored at catalogs/<label>.tsv — editable
+# init time and stored at state/catalogs/<label>.tsv — editable
 # independently per device from then on. Desired states:
 #   absent    -> should not be present. Reconciler tries `pm uninstall`;
 #                if that fails with the known "protected app" pattern
@@ -29,13 +30,13 @@
 # as you want; already-satisfied rows are no-ops.
 #
 # Usage:
-#   ./debloat.sh status [serial-or-label]   Compare catalog vs device, no changes
-#   ./debloat.sh apply  [serial-or-label]   Reconcile device to match its catalog
-#   ./debloat.sh list   [state]             Print the catalog (optionally filtered), no device needed
+#   debloat.sh status [serial-or-label]   Compare catalog vs device, no changes
+#   debloat.sh apply  [serial-or-label]   Reconcile device to match its catalog
+#   debloat.sh list   [state]             Print the catalog (optionally filtered), no device needed
 #
 # The device arg is optional if exactly one ADB device is connected.
-# Run ./devices.sh init once to label devices and pick their catalog
-# template — see lib/resolve_device.sh.
+# Run ./run.sh devices init once to label devices and pick their
+# catalog template — see lib/resolve_device.sh.
 #
 set -uo pipefail
 
@@ -47,7 +48,7 @@ DB_FILE=""   # resolved per-invocation in resolve_catalog()
 
 usage() {
     cat <<EOF
-Usage: $0 <command> [args]
+Usage: ./run.sh debloat <command> [args]
 
 Commands:
   status [serial-or-label]   Dry-run: compare the device's catalog
@@ -64,7 +65,7 @@ Env:
   DEBLOAT_DB   Force a specific catalog file, skipping device-based lookup.
 
 Catalog resolution order: \$DEBLOAT_DB env override -> the catalog
-registered for this device in devices.tsv (set via ./devices.sh init)
+registered for this device in state/devices.tsv (set via ./run.sh devices init)
 -> $DEFAULT_TEMPLATE as a last-resort default.
 EOF
 }
@@ -88,7 +89,7 @@ resolve_catalog() {
         else
             DB_FILE="$DEFAULT_TEMPLATE"
             echo "No catalog registered for this device — using default template ($DB_FILE)." >&2
-            echo "Run ./devices.sh init to set up a proper per-device catalog." >&2
+            echo "Run ./run.sh devices init to set up a proper per-device catalog." >&2
         fi
     else
         DB_FILE="$DEFAULT_TEMPLATE"
@@ -181,7 +182,7 @@ cmd_status() {
 
     echo
     echo "In desired state: $ok, Drift: $drift"
-    [[ "$drift" -gt 0 ]] && echo "Run '$0 apply $serial' to reconcile."
+    [[ "$drift" -gt 0 ]] && echo "Run './run.sh debloat apply $serial' to reconcile."
 }
 
 cmd_apply() {

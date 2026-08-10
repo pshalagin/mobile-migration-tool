@@ -1,29 +1,31 @@
 #!/usr/bin/env bash
 #
-# migrate_apps.sh — multipass app migration toolkit. Old and new
+# scripts/migrate.sh — multipass app migration toolkit. Old and new
 # devices never need to be connected at the same time: each step
-# reads/writes plain-text state files under ./migration_state/, and
+# reads/writes plain-text state files under state/migration/, and
 # you get a hand-editable config file between planning and pulling so
 # you control exactly what gets ported.
 #
+# Run via ./run.sh migrate <command> — see run.sh at the repo root.
+#
 # Workflow:
-#   1. ./migrate_apps.sh scan-old <old_serial>     (old phone connected)
-#   2. ./migrate_apps.sh scan-new <new_serial>     (new phone connected, any time)
-#   3. ./migrate_apps.sh plan                       (no phone needed)
-#        -> writes migration_state/migration_config.txt
-#   4. ./migrate_apps.sh enrich                     (no phone needed, needs internet)
+#   1. migrate.sh scan-old <old_serial>     (old phone connected)
+#   2. migrate.sh scan-new <new_serial>     (new phone connected, any time)
+#   3. migrate.sh plan                       (no phone needed)
+#        -> writes state/migration/migration_config.txt
+#   4. migrate.sh enrich                     (no phone needed, needs internet)
 #        -> looks up each package's real app name from public store
 #           listings and rewrites the config file's notes with it
 #        -> EDIT THIS FILE BY HAND: change PORT/SKIP per line
-#   5. ./migrate_apps.sh pull <old_serial>          (old phone connected again)
-#   6. ./migrate_apps.sh install <new_serial>       (new phone connected, any time after)
+#   5. migrate.sh pull <old_serial>          (old phone connected again)
+#   6. migrate.sh install <new_serial>       (new phone connected, any time after)
 #
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/resolve_device.sh"
 
-STATE_DIR="${MIGRATION_STATE_DIR:-./migration_state}"
+STATE_DIR="${MIGRATION_STATE_DIR:-$REPO_ROOT/state/migration}"
 APK_DIR="$STATE_DIR/apk_transfer"
 OLD_FILE="$STATE_DIR/old_packages.tsv"
 NEW_FILE="$STATE_DIR/new_packages.txt"
@@ -33,7 +35,7 @@ mkdir -p "$STATE_DIR"
 
 usage() {
     cat <<EOF
-Usage: $0 <command> [args]
+Usage: ./run.sh migrate <command> [args]
 
 Commands:
   scan-old <serial>    Snapshot installed third-party packages + installer
@@ -53,15 +55,15 @@ Commands:
                         <serial> (must be the NEW device)
   status                Show current state of all files/counts
 
-All <serial> args also accept a saved label (see ./devices.sh init).
-If you've tagged devices with roles via 'devices.sh init' or
-'devices.sh set-role <label> old|new', these commands need no arg at
+All <serial> args also accept a saved label (see ./run.sh devices init).
+If you've tagged devices with roles via 'devices init' or
+'devices set-role <label> old|new', these commands need no arg at
 all — they auto-pick whichever connected device is registered for
 that role. Otherwise they fall back to auto-picking when only one
 device is connected.
 
 Env:
-  MIGRATION_STATE_DIR   Override the state directory (default: ./migration_state)
+  MIGRATION_STATE_DIR   Override the state directory (default: state/migration)
 EOF
 }
 
@@ -135,7 +137,7 @@ cmd_plan() {
 
     echo "Plan written to $CONFIG_FILE"
     echo "$total apps missing on new device, $ported defaulted to PORT (sideload)."
-    echo "Edit the file now, then run: $0 pull <old_serial>"
+    echo "Edit the file now, then run: ./run.sh migrate pull <old_serial>"
 }
 
 extract_og_title() {
@@ -276,7 +278,7 @@ cmd_pull() {
     echo
     echo "Pulled: $pulled, Failed: $failed"
     echo "APKs saved under $APK_DIR/<package>/"
-    echo "Whenever the new device is connected, run: $0 install <new_serial>"
+    echo "Whenever the new device is connected, run: ./run.sh migrate install <new_serial>"
 }
 
 cmd_install() {

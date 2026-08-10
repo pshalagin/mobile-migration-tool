@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-wizard.py — guided end-to-end setup: pick source/dest devices, debloat
-the new phone, migrate apps over, set up Lawnchair. Orchestrates the
-existing devices.sh / debloat.sh / migrate.sh scripts rather than
-reimplementing their logic — this file is UI/sequencing, they remain
-the source of truth for what actually happens to a device. Run it
-directly with ./run.sh, or `python3 wizard.py`.
+scripts/wizard.py — guided end-to-end setup: pick source/dest devices,
+debloat the new phone, migrate apps over, set up Lawnchair.
+Orchestrates the existing devices.sh / debloat.sh / migrate.sh scripts
+rather than reimplementing their logic — this file is UI/sequencing,
+they remain the source of truth for what actually happens to a
+device. Run it via ./run.sh at the repo root (no args), not directly.
 
 Every step is skippable. Nothing destructive runs without an explicit
 yes from you first (dry-run before real debloat, selectable package
@@ -15,14 +15,15 @@ import csv
 import os
 import subprocess
 import sys
-import time
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent
-DEVICES_TSV = REPO_ROOT / "devices.tsv"
+REPO_ROOT = Path(__file__).resolve().parent.parent
+SCRIPTS_DIR = REPO_ROOT / "scripts"
+STATE_DIR = REPO_ROOT / "state"
+DEVICES_TSV = STATE_DIR / "devices.tsv"
 TEMPLATES_DIR = REPO_ROOT / "templates"
-CATALOGS_DIR = REPO_ROOT / "catalogs"
-MIGRATION_STATE = REPO_ROOT / "migration_state"
+CATALOGS_DIR = STATE_DIR / "catalogs"
+MIGRATION_STATE = STATE_DIR / "migration"
 
 
 # --------------------------------------------------------------------
@@ -161,6 +162,7 @@ def read_devices():
 
 
 def write_devices(rows):
+    STATE_DIR.mkdir(exist_ok=True)
     with open(DEVICES_TSV, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=["label", "serial", "model", "catalog", "role"],
                             delimiter="\t")
@@ -353,11 +355,12 @@ def step_pick_template(dest_label):
     if not choice:
         return None
 
+    STATE_DIR.mkdir(exist_ok=True)
     CATALOGS_DIR.mkdir(exist_ok=True)
     dest_catalog = CATALOGS_DIR / f"{dest_label}.tsv"
     dest_catalog.write_text((TEMPLATES_DIR / f"{choice}.tsv").read_text())
-    upsert_device(dest_label, "", "", catalog=f"catalogs/{dest_label}.tsv")
-    say(f"Seeded catalogs/{dest_label}.tsv from template '{choice}'.")
+    upsert_device(dest_label, "", "", catalog=f"state/catalogs/{dest_label}.tsv")
+    say(f"Seeded state/catalogs/{dest_label}.tsv from template '{choice}'.")
     return dest_catalog
 
 
@@ -366,10 +369,10 @@ def step_debloat(dest_label, both_at_once):
     resolve_serial(dest_label, "new", both_at_once)
 
     say("Dry run first (no changes made yet)...")
-    run(["./debloat.sh", "status", dest_label])
+    run(["./scripts/debloat.sh", "status", dest_label])
 
     if ask_yes_no("\nRun the real debloat now (apply the catalog to the device)?", default=True):
-        run(["./debloat.sh", "apply", dest_label])
+        run(["./scripts/debloat.sh", "apply", dest_label])
     else:
         say("Skipped — nothing changed on the device.")
 
@@ -379,21 +382,21 @@ def step_migrate(src_label, dest_label, both_at_once):
     if not ask_yes_no("Migrate apps from the source device to the destination device?", default=True):
         return
 
-    MIGRATION_STATE.mkdir(exist_ok=True)
+    MIGRATION_STATE.mkdir(parents=True, exist_ok=True)
 
     say("\n-- scanning source device --")
     resolve_serial(src_label, "old", both_at_once)
-    run(["./migrate.sh", "scan-old", src_label], check=True)
+    run(["./scripts/migrate.sh", "scan-old", src_label], check=True)
 
     say("\n-- scanning destination device --")
     resolve_serial(dest_label, "new", both_at_once)
-    run(["./migrate.sh", "scan-new", dest_label], check=True)
+    run(["./scripts/migrate.sh", "scan-new", dest_label], check=True)
 
-    run(["./migrate.sh", "plan"], check=True)
+    run(["./scripts/migrate.sh", "plan"], check=True)
 
     if ask_yes_no("\nLook up real app names from public store listings (needs internet, "
                   "takes a bit)?", default=True):
-        run(["./migrate.sh", "enrich"])
+        run(["./scripts/migrate.sh", "enrich"])
 
     config_path = MIGRATION_STATE / "migration_config.txt"
     rows = _parse_migration_config(config_path)
@@ -418,11 +421,11 @@ def step_migrate(src_label, dest_label, both_at_once):
 
     say("\n-- pulling APKs from source --")
     resolve_serial(src_label, "old", both_at_once)
-    run(["./migrate.sh", "pull", src_label], check=True)
+    run(["./scripts/migrate.sh", "pull", src_label], check=True)
 
     say("\n-- installing on destination --")
     resolve_serial(dest_label, "new", both_at_once)
-    run(["./migrate.sh", "install", dest_label], check=True)
+    run(["./scripts/migrate.sh", "install", dest_label], check=True)
 
 
 def _parse_migration_config(path):
@@ -515,8 +518,8 @@ def step_layout_plan(dest_label, both_at_once):
     ).stdout
     pkgs = sorted(l.replace("package:", "").strip() for l in installed.splitlines() if l.strip())
 
-    plan_path = REPO_ROOT / "migration_state" / f"{dest_label}_layout_plan.md"
-    plan_path.parent.mkdir(exist_ok=True)
+    plan_path = MIGRATION_STATE / f"{dest_label}_layout_plan.md"
+    plan_path.parent.mkdir(parents=True, exist_ok=True)
     lines = [
         f"# Home screen layout plan — {dest_label}",
         "",

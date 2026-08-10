@@ -1,38 +1,41 @@
 #!/usr/bin/env bash
 #
-# devices.sh — one-time-ish setup: detect connected ADB device(s),
-# save serial+model under a label you choose, pick a debloat
-# package-catalog template to seed that device's live catalog, and
-# optionally tag it as the "old" or "new" device for migrate.sh so
+# scripts/devices.sh — one-time-ish setup: detect connected ADB
+# device(s), save serial+model under a label you choose, pick a
+# debloat package-catalog template to seed that device's live catalog,
+# and optionally tag it as the "old" or "new" device for migrate.sh so
 # scan-old/scan-new/pull/install never need a device arg again.
 #
-# devices.tsv columns: label, serial, model, catalog, role
-# `catalog` is a repo-root-relative path (e.g. catalogs/redmi15c.tsv),
+# Run via ./run.sh devices <command> — see run.sh at the repo root.
+#
+# state/devices.tsv columns: label, serial, model, catalog, role
+# `catalog` is a repo-root-relative path (e.g. state/catalogs/x.tsv),
 # a per-device COPY of a templates/*.tsv file — editable independently
 # per device without touching the template it came from.
 # `role` is "old", "new", or empty. At most one device holds each role
 # at a time — assigning it to a new device clears it from the old one.
 #
 # Usage:
-#   ./devices.sh init                    Detect + label + catalog + role
-#   ./devices.sh list                    Show saved devices
-#   ./devices.sh forget <label>          Remove a saved device
-#   ./devices.sh templates               List available catalog templates
-#   ./devices.sh set-role <label> <old|new|none>
-#                                         Assign/change a device's migration
-#                                         role without re-running init
+#   devices.sh init                    Detect + label + catalog + role
+#   devices.sh list                    Show saved devices
+#   devices.sh forget <label>          Remove a saved device
+#   devices.sh templates               List available catalog templates
+#   devices.sh set-role <label> <old|new|none>
+#                                       Assign/change a device's migration
+#                                       role without re-running init
 #
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DEVICES_FILE="$SCRIPT_DIR/devices.tsv"
-TEMPLATES_DIR="$SCRIPT_DIR/templates"
-CATALOGS_DIR="$SCRIPT_DIR/catalogs"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+DEVICES_FILE="$REPO_ROOT/state/devices.tsv"
+TEMPLATES_DIR="$REPO_ROOT/templates"
+CATALOGS_DIR="$REPO_ROOT/state/catalogs"
 source "$SCRIPT_DIR/lib/resolve_device.sh"
 
 usage() {
     cat <<EOF
-Usage: $0 <command>
+Usage: ./run.sh devices <command>
 
 Commands:
   init                          Detect connected ADB device(s), prompt
@@ -207,7 +210,7 @@ cmd_init() {
         local template catalog=""
         template="$(pick_template)"
         if [[ -n "$template" ]]; then
-            catalog="catalogs/${label}.tsv"
+            catalog="state/catalogs/${label}.tsv"
             cp "$TEMPLATES_DIR/${template}.tsv" "$CATALOGS_DIR/${label}.tsv"
             echo "Seeded $catalog from template '$template' — edit it freely, it's this device's own copy."
         fi
@@ -227,7 +230,7 @@ cmd_init() {
 cmd_list() {
     ensure_devices_schema
     if [[ "$(wc -l < "$DEVICES_FILE")" -le 1 ]]; then
-        echo "No devices saved yet. Run: $0 init"
+        echo "No devices saved yet. Run: ./run.sh devices init"
         return
     fi
     printf "%-15s %-22s %-16s %-22s %s\n" "LABEL" "SERIAL" "MODEL" "CATALOG" "ROLE"
@@ -236,23 +239,23 @@ cmd_list() {
 
 cmd_forget() {
     local label="${1:-}"
-    [[ -z "$label" ]] && { echo "Usage: $0 forget <label>"; exit 1; }
+    [[ -z "$label" ]] && { echo "Usage: ./run.sh devices forget <label>"; exit 1; }
     ensure_devices_schema
     tmp="$(mktemp)"
     awk -F'\t' -v l="$label" 'NR==1 || $1!=l' "$DEVICES_FILE" > "$tmp" && mv "$tmp" "$DEVICES_FILE"
-    echo "Forgot '$label' (if it existed). Its catalogs/$label.tsv, if any, was left in place — delete manually if you don't want it."
+    echo "Forgot '$label' (if it existed). Its state/catalogs/$label.tsv, if any, was left in place — delete manually if you don't want it."
 }
 
 cmd_set_role() {
     local label="${1:-}" role="${2:-}"
     if [[ -z "$label" || -z "$role" ]]; then
-        echo "Usage: $0 set-role <label> <old|new|none>"
+        echo "Usage: ./run.sh devices set-role <label> <old|new|none>"
         exit 1
     fi
     ensure_devices_schema
 
     if ! awk -F'\t' -v l="$label" 'NR>1 && $1==l{f=1} END{exit !f}' "$DEVICES_FILE"; then
-        echo "No device labeled '$label'. Run '$0 list' to see saved devices."
+        echo "No device labeled '$label'. Run './run.sh devices list' to see saved devices."
         exit 1
     fi
 
