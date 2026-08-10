@@ -1,0 +1,250 @@
+package	state	category	note
+cn.wps.moffice_eng	absent	bloat	WPS Office variant
+cn.wps.xiaomi.abroad.lite	absent	bloat	WPS Office variant
+com.alibaba.aliexpresshd	absent	bloat	AliExpress
+com.amazon.appmanager	absent	bloat	Amazon
+com.amazon.fv	absent	bloat	Amazon Freevee
+com.amazon.kindle	absent	bloat	Kindle
+com.amazon.mp3	absent	bloat	Amazon Music
+com.amazon.mshop.android	absent	bloat	Amazon Shopping
+com.amazon.mshop.android.shopping	absent	bloat	Amazon Shopping
+com.amazon.venezia	absent	bloat	Amazon Appstore
+com.android.providers.downloads.ui	absent	bloat	Downloads UI, redundant
+com.audible.application	absent	bloat	Audible
+com.bitdefender.security	absent	bloat	Bitdefender trial
+com.block.juggle	absent	game	preinstalled game
+com.block.puzzle.game.hippo.mi	absent	game	preinstalled game
+com.blurb.checkout	absent	bloat	Blurb
+com.booking	absent	bloat	Booking.com
+com.cnn.mobile.android.phone.edgepanel	absent	bloat	CNN
+com.crazy.juicer.xm	absent	game	preinstalled game
+com.duokan.phone.remotecontroller	absent	bloat	Mi Remote
+com.einnovation.temu	absent	bloat	Temu
+com.enhance.gameservice	absent	bloat	game enhance service
+com.facebook.appmanager	absent	bloat	Facebook
+com.facebook.katana	absent	bloat	Facebook
+com.facebook.orca	absent	bloat	Messenger
+com.facebook.services	absent	bloat	Facebook
+com.facebook.system	absent	bloat	Facebook
+com.flipboard.app	absent	bloat	Flipboard
+com.flipboard.boxer.app	absent	bloat	Flipboard
+com.fugo.wow	absent	game	preinstalled game
+com.funtomic.matchmasters	absent	game	preinstalled game
+com.gameduell.tarot	absent	game	preinstalled game
+com.google.android.apps.books	absent	obsolete-app	Play Books
+com.google.android.apps.docs	absent	obsolete-app	Google Docs
+com.google.android.apps.magazines	absent	obsolete-app	Google News (legacy)
+com.google.android.apps.plus	absent	obsolete-app	Google+ (defunct)
+com.google.android.apps.subscriptions.red	absent	obsolete-app	Play Pass
+com.google.android.apps.tachyon	absent	obsolete-app	Duo (defunct, merged into Meet)
+com.google.android.apps.youtube.music	absent	obsolete-app	YT Music
+com.google.android.music	absent	obsolete-app	Play Music (defunct)
+com.google.android.talk	absent	obsolete-app	Hangouts (defunct)
+com.google.android.videos	absent	obsolete-app	Play Movies
+com.google.audio.hearing.visualization.accessibility.scribe	absent	bloat	Live Transcribe helper
+com.imdb.mobile	absent	bloat	IMDb
+com.infraware.polarisoffice5	absent	bloat	Polaris Office
+com.jewelsblast.ivygames.Adventure.free	absent	game	preinstalled game (note: capital A in package name on this build)
+com.lemon.lvoverseas	absent	bloat	CapCut
+com.linkedin.android	absent	bloat	LinkedIn
+com.mi.global.pocobbs	absent	bloat	POCO forum
+com.mi.global.pocostore	absent	bloat	POCO store
+com.mi.globalbrowser	absent	bloat	Mi Browser
+com.micredit.in	absent	bloat	Mi Credit
+com.microsoft.office.excel	absent	bloat	MS Office
+com.microsoft.office.officehubrow	absent	bloat	MS Office hub
+com.microsoft.office.outlook	absent	bloat	Outlook
+com.microsoft.office.powerpoint	absent	bloat	MS Office
+com.microsoft.office.word	absent	bloat	MS Office
+com.microsoft.skydrive	absent	bloat	OneDrive
+com.miui.analytics	absent	ad-telemetry	MIUI analytics
+com.miui.audioeffect	absent	bloat	audio effect UI
+com.miui.audiomonitor	absent	bloat	audio monitor
+com.miui.carlink	absent	bloat	car link, unused
+com.miui.compass	absent	bloat	compass app (protected on this build — reconciler auto-falls-back to disable)
+com.miui.extraphoto	absent	bloat	extra photo features
+com.miui.hybrid	absent	bloat	quick apps runtime
+com.miui.hybrid.accessory	absent	bloat	quick apps runtime
+com.miui.micloudsync	absent	bloat	Mi Cloud sync helper (not the core cloud service)
+com.miui.mishare.connectivity	absent	bloat	Mi Share
+com.miui.misightservice	absent	ad-telemetry	MIUI insight/telemetry
+com.miui.misound	absent	bloat	sound effects
+com.miui.msa.global	absent	ad-telemetry	Mi Ads SDK
+com.miui.notes	absent	bloat	notes app (protected on this build — reconciler auto-falls-back to disable)
+com.miui.notification	absent	bloat	notification style helper
+com.miui.personalassistant	absent	bloat	App Vault
+com.miui.player	absent	bloat	music player
+com.miui.systemadsolution	absent	ad-telemetry	system ad injection
+com.miui.touchassistant	absent	bloat	assistive touch
+com.miui.translation.kingsoft	absent	bloat	translation engine
+com.miui.translation.xmcloud	absent	bloat	translation engine
+com.miui.translation.youdao	absent	bloat	translation engine
+com.miui.translationservice	absent	bloat	translation service
+com.miui.userguide	absent	bloat	onboarding guide
+com.miui.videoplayer	absent	bloat	video player
+com.miui.voiceassist	absent	bloat	voice assistant
+com.miui.voiceassistoverlay	absent	bloat	voice assistant overlay
+com.miui.voicetrigger	absent	bloat	voice trigger
+com.miui.weather2	absent	bloat	weather app (protected on this build — reconciler auto-falls-back to disable)
+com.miui.yellowpage	absent	bloat	yellow pages
+com.moomoo.trade	absent	bloat	trading app
+com.mygalaxy	absent	bloat	MyGalaxy
+com.netflix.mediaclient	absent	bloat	Netflix
+com.netflix.partner.activation	absent	bloat	Netflix
+com.nf.snake	absent	game	preinstalled game
+com.oakever.tiletrip	absent	game	preinstalled game
+com.opera.browser	absent	bloat	Opera
+com.opera.max.oem	absent	bloat	Opera
+com.opera.preinstall	absent	bloat	Opera
+com.plarium.raidlegends	absent	game	preinstalled game
+com.sec.android.app.withtv	absent	bloat	leftover Samsung package, inert on this device
+com.singtel.mysingtel	absent	bloat	Singtel
+com.skype.raider	absent	bloat	Skype
+com.sohu.inputmethod.sogou.xiaomi	absent	bloat	Sogou keyboard
+com.soulcompany.bubbleshooter.relaxing	absent	game	preinstalled game
+com.spotify.music	absent	bloat	Spotify
+com.sukhavati.gotoplaying.bubble.BubbleShooter.mint	absent	game	preinstalled game (note: capital BS in package name on this build)
+com.touchtype.swiftkey	absent	bloat	SwiftKey
+com.tripadvisor.tripadvisor	absent	bloat	TripAdvisor
+com.tripledot.solitaire	absent	game	preinstalled game
+com.vitastudio.mahjong	absent	game	preinstalled game
+com.vlingo.midas	absent	bloat	Vlingo voice
+com.xiaomi.discover	absent	bloat	Xiaomi Discover feed
+com.xiaomi.midrop	absent	bloat	Mi Drop (protected on this build — reconciler auto-falls-back to disable)
+com.xiaomi.mipicks	absent	bloat	GetApps store
+com.xiaomi.mirecycle	absent	bloat	recycle bin
+com.xiaomi.payment	absent	bloat	Xiaomi payment
+com.xiaomi.ugd	absent	bloat	user growth/diagnostics
+com.zhiliaoapp.musically	absent	bloat	TikTok
+de.autodoc.gmbh	absent	bloat	Autodoc
+net.wooga.junes_journey_hidden_object_mystery_game	absent	game	preinstalled game
+com.miui.android.fashiongallery	absent	ad-telemetry	lockscreen/gallery ad feed
+com.mi.globalminusscreen	absent	ad-telemetry	App Vault news/ads home screen
+com.miui.contentcatcher	absent	ad-telemetry	telemetry helper
+com.miui.bugreport	absent	bloat	diagnostic bug reporter
+com.miui.cit	absent	factory-test	factory test app
+com.miui.huanji	absent	bloat	Mi Mover, only needed during initial setup or migration
+com.xiaomi.ab	absent	ad-telemetry	A/B test service
+com.xiaomi.powerchecker	absent	bloat	battery health nag widget
+com.monotype.android.font.chococooky	absent	bloat	extra font
+com.monotype.android.font.cooljazz	absent	bloat	extra font
+com.monotype.android.font.foundation	absent	bloat	extra font
+com.monotype.android.font.rosemary	absent	bloat	extra font
+com.miui.mediaeditor	absent	bloat	photo editor, redundant with Gallery's built-in edit
+com.longcheertel.AutoTest	absent	factory-test	ODM factory test app
+com.longcheertel.cit	absent	factory-test	ODM factory test app
+com.silead.factorytest	absent	factory-test	fingerprint sensor factory test
+com.fingerprints.sensortesttool	absent	factory-test	fingerprint sensor factory test
+com.goodix.gftest	absent	factory-test	fingerprint sensor factory test
+com.novatek.novavis	absent	factory-test	display/touch factory test
+com.mediatek.engineermode	absent	factory-test	MediaTek engineer/diagnostic mode
+com.debug.loggerui	absent	bloat	debug log viewer
+com.bsp.logmanager	absent	bloat	BSP log manager
+com.mi.global.bbs	absent	bloat	Mi Community forum
+com.mi.global.shop	absent	bloat	Mi Store shopping
+com.tencent.soter.soterserver	absent	bloat	WeChat Pay biometric security, unused outside China
+com.orange.update	absent	carrier-region	Orange carrier app, irrelevant outside Orange network
+com.xiaomi.barrage	absent	bloat	danmaku video comment overlay
+com.xiaomi.mtb	absent	factory-test	hidden baseband/modem debug tool (low confidence source: AI summary, not primary)
+com.android.apps.tag	absent	bloat	NFC tag reader/writer, redundant
+com.android.avatarpicker	absent	bloat	cosmetic contact-avatar picker
+com.android.bluetoothmidiservice	absent	bloat	BT MIDI passthrough for music gear
+com.android.htmlviewer	absent	bloat	legacy HTML viewer
+com.android.egg	absent	bloat	Easter egg, cosmetic only
+com.android.dreams.basic	absent	bloat	basic screensaver
+com.android.soundrecorder	absent	bloat	voice recorder — the ONLY recorder on this build, protected on this build so reconciler auto-falls-back to disable; re-enable if you need voice memos
+com.mi.appfinder	absent	bloat	redundant with launcher search
+com.miui.phrase	absent	bloat	quick-phrase text snippet helper
+com.miui.guardprovider	absent	bloat	legacy multi-engine antivirus provider
+com.miui.thirdappassistant	absent	bloat	app-transfer onboarding helper
+com.google.android.adservices.api	absent	google-privacy-telemetry	Privacy Sandbox ad-targeting API
+com.google.android.ondevicepersonalization.services	absent	google-privacy-telemetry	ad personalization service
+com.google.android.as.oss	absent	google-privacy-telemetry	federated-compute companion service
+com.google.android.apps.nbu.files	absent	bloat	Google Files, redundant with kept file explorer
+com.logame.eliminateintruder3d	absent	game	preinstalled game
+com.mintgames.triplecrush.tile.fun	absent	game	preinstalled game
+com.mintgames.wordtrip	absent	game	preinstalled game
+com.ordinaryjoy.woodblast	absent	game	preinstalled game
+com.wdstechnology.android.kryten	absent	game	preinstalled bloat game/app
+com.mediatek.duraspeed	absent	bloat	MTK background-killer, conflicts with MIUI PowerKeeper
+com.xiaomi.glgm	absent	bloat	Xiaomi Game Center plugin
+com.google.android.as	disabled	optional-feature	Android System Intelligence — Live Caption/Now Playing/Smart Reply. Full removal loses real features; disable instead.
+com.miui.gallery	disabled	optional-feature	your actual photo viewer unless you fully rely on Google Photos; disable rather than remove.
+com.google.android.gm	keep	google-account	Gmail — kept installed, just don't sign into main Google account
+com.android.vending	keep	google-account	Play Store — kept installed as fallback alongside RuStore, stay signed out
+com.xiaomi.simactivate.service	optional	carrier-region	eSIM/region activation; needed if you ever reactivate a region/eSIM
+com.miui.cotaservice	optional	carrier-region	carrier/config OTA — may affect VoLTE/APN provisioning when roaming on a new SIM, left present given travel use case
+com.google.android.youtube	optional	optional-feature	YouTube app
+com.android.email	optional	optional-feature	stock email client
+com.android.exchange	optional	optional-feature	Exchange sync
+com.milink.service	optional	optional-feature	Mi Share/screen-cast
+com.android.printspooler	optional	optional-feature	printing support
+com.android.calllogbackup	optional	optional-feature	call-log backup for Google device transfer
+com.android.musicfx	optional	optional-feature	audio equalizer/effects picker
+com.android.traceur	optional	optional-feature	dev-only system trace/bugreport tool
+com.google.ambient.streaming	optional	optional-feature	Chromebook cross-device features
+com.google.android.accessibility.switchaccess	optional	optional-feature	Switch Access accessibility
+com.google.android.apps.bard	optional	optional-feature	Gemini AI assistant
+com.google.android.apps.chromecast.app	optional	optional-feature	Google Home / Chromecast control
+com.google.android.apps.maps	optional	optional-feature	Google Maps
+com.google.android.apps.messaging	optional	optional-feature	Google Messages — check it's not your default SMS app first
+com.google.android.apps.photos	optional	optional-feature	Google Photos, redundant w/ MIUI Gallery unless you use cloud backup
+com.google.android.apps.safetyhub	optional	optional-feature	Personal Safety (crash detection, emergency sharing)
+com.google.android.apps.walletnfcrel	optional	optional-feature	Google Wallet, only if you don't use NFC tap-to-pay
+com.google.android.apps.wellbeing	optional	optional-feature	Digital Wellbeing screen-time tools
+com.google.android.gms.supervision	optional	optional-feature	Family Link parental supervision
+com.google.android.health.connect.backuprestore	optional	optional-feature	Health Connect data hub
+com.google.android.healthconnect.controller	optional	optional-feature	Health Connect controller UI
+com.google.android.projection.gearhead	optional	optional-feature	Android Auto
+com.mediatek.callrecorder	optional	optional-feature	in-call recording button in Phone app
+com.mediatek.voicecommand	optional	optional-feature	hands-free voice-wake engine
+com.mediatek.voiceunlock	optional	optional-feature	voice-based unlock method
+com.microsoftsdk.crossdeviceservicebroker	optional	optional-feature	Microsoft Link to Windows/Phone Link
+com.miui.aod	optional	optional-feature	Always-On-Display
+com.miui.backup	optional	optional-feature	local/PC backup tool
+com.miui.cloudbackup	optional	optional-feature	Mi Cloud backup
+com.miui.fm	optional	optional-feature	FM Radio app
+com.miui.fmservice	optional	optional-feature	FM Radio service
+com.miui.qr	optional	optional-feature	QR scanner — keep this OR xiaomi.scanner, not both
+com.xiaomi.scanner	optional	optional-feature	QR/doc scanner — keep this OR miui.qr, not both
+com.miui.screenrecorder	optional	optional-feature	built-in screen recorder
+com.xiaomi.account	optional	optional-feature	Mi Account sync — underpins Mi Cloud/Find Device/theme store
+com.xiaomi.aiasst.vision	optional	optional-feature	on-device AI subtitle/translate for camera
+com.xiaomi.calendar	optional	optional-feature	Mi Calendar, redundant if you use Google/other calendar
+com.xiaomi.smarthome	optional	optional-feature	Mi Home, only if you own Xiaomi/Mijia IoT devices
+com.miui.cleaner	absent	optional-feature	Xiaomi's own cleaner — you chose to remove
+com.xiaomi.miplay_client	absent	optional-feature	audio casting — you chose to remove
+com.google.android.marvin.talkback	absent	optional-feature	accessibility service — you chose to remove
+com.miui.miservice	keep	hardware-critical	Bluetooth stack
+com.xiaomi.bluetooth	keep	hardware-critical	Bluetooth stack
+com.xiaomi.xmsf	keep	hardware-critical	OTA/security update chain, Xiaomi cloud/account services
+com.xiaomi.xmsfkeeper	keep	hardware-critical	OTA/security update chain
+com.miui.cloudservice	keep	hardware-critical	OTA/security update chain
+com.miui.cloudservice.sysbase	keep	hardware-critical	OTA/security update chain
+com.xiaomi.micloud.sdk	keep	hardware-critical	OTA/security update chain
+com.miui.daemon	keep	hardware-critical	CORRECTION: this was also present in the removal list earlier (contradiction from iterative edits) — it is part of the OTA chain per the upstream README's own restore instructions. If already removed on your device, restore with: adb shell pm install-existing --user 0 com.miui.daemon
+com.xiaomi.gnss.polaris	keep	hardware-critical	faster/accurate GPS lock
+com.xiaomi.finddevice	keep	hardware-critical	anti-theft Find My Device
+com.android.stk	keep	hardware-critical	SIM toolkit, needed for some carrier services/VoLTE
+com.miui.calculator	keep	hardware-critical	basic utility, not bloat
+com.mi.android.globalFileexplorer	keep	hardware-critical	basic utility, not bloat (note: capital F in package name on this build)
+com.google.android.googlequicksearchbox	keep	hardware-critical	Assistant/search bar
+com.google.android.tts	keep	hardware-critical	system TTS used by many apps
+com.google.ar.core	keep	hardware-critical	used by camera/measure-type features on some apps
+com.miui.miwallpaper	keep	hardware-critical	removing breaks Set Wallpaper entirely, including lockscreen
+com.android.wallpaper.livepicker	keep	hardware-critical	wallpaper engine component
+com.android.wallpapercropper	keep	hardware-critical	wallpaper engine component
+com.google.android.gms	keep	hardware-critical	Google Play services — keep installed & signed out, needed by many non-Google apps for push/Play Integrity
+com.android.companiondevicemanager	keep	hardware-critical	core AOSP API used by watches/BT accessory pairing
+com.android.emergency	keep	hardware-critical	lock-screen Emergency information / medical ID
+com.miui.screenshot	keep	hardware-critical	the actual screenshot-capture service (power+vol gesture)
+com.miui.securitycenter	keep	hardware-critical	MIUI security hub; removal reported to cause permission-dialog failures/bricking
+com.miui.accessibility	keep	hardware-critical	accessibility framework; removal reported to crash Settings
+com.miui.powerkeeper	keep	hardware-critical	DO NOT fully uninstall (bootloop reports); if you must touch it, disable-user only
+com.xiaomi.misettings	keep	hardware-critical	Settings-app auxiliary service; removal reported to destabilize Settings
+com.xiaomi.mi_connect_service	keep	hardware-critical	cross-device connectivity (BT/Wi-Fi quick-connect)
+com.xiaomi.touchservice	keep	hardware-critical	touchscreen/gesture handling tied to input hardware stack
+com.xiaomi.trustservice	keep	hardware-critical	security/trust-attestation, affects banking/payment app checks
+com.xiaomi.cameramind	keep	hardware-critical	Xiaomi camera AI/image-pipeline component, tied into stock camera
+org.ifaa.aidl.manager	keep	hardware-critical	IFAA fingerprint auth framework
+com.google.android.inputmethod.latin	keep	hardware-critical	Gboard — only remove after confirming another keyboard is set as default IME
