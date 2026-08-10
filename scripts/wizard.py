@@ -197,11 +197,7 @@ def upsert_device(label, serial, model, catalog="", role=""):
     write_devices(rows)
 
 
-def label_for_serial(serial):
-    for r in read_devices():
-        if r["serial"] == serial:
-            return r["label"]
-    return None
+ROLE_DESC = {"old": "SOURCE (old) phone", "new": "DESTINATION (new) phone"}
 
 
 def pick_device(prompt, exclude_serial=None):
@@ -215,70 +211,61 @@ def pick_device(prompt, exclude_serial=None):
     return ask_select(prompt, options)
 
 
-def resolve_serial(label, role, both_at_once, exclude_serial=None):
+def resolve_serial(serial, role, exclude_serial=None):
     """
-    Get a connected, validated serial for `label`, prompting/waiting as
-    needed. Three cases:
-      1. label already has a known serial and it's currently connected -> use it
-      2. label has a known serial but it's not connected right now -> wait for it
-      3. label has never been seen connected before -> detect which newly
-         plugged-in device it is (by diffing adb's device list before/after
-         asking the user to plug it in), then register it
-    This is what makes "source not connected yet" safe instead of hanging
-    on a serial that will never appear.
+    Get a connected, validated serial for the given role, prompting/
+    waiting as needed. The ADB serial itself is the device's identity
+    — no separate user-chosen label. Two cases:
+      1. `serial` is already known (picked earlier this session, or
+         persisted in state/devices.tsv from a previous run) -> wait
+         for it to show up in `adb devices` if it isn't right now
+         (returns immediately if it's already connected).
+      2. `serial` is None (never seen this session) -> detect which
+         newly plugged-in device it is by diffing `adb devices`
+         output before/after asking the user to connect it, then
+         register it against this role.
+    This works the same whether devices are connected one at a time
+    or both at once — it just waits for whatever isn't there yet.
     """
-    rows = read_devices()
-    row = next((r for r in rows if r["label"] == label), None)
-    known_serial = row["serial"] if row and row.get("serial") else None
+    role_desc = ROLE_DESC.get(role, role)
+    connected = lambda: [s for s, _ in adb_connected_devices() if s != exclude_serial]  # noqa: E731
 
-    if known_serial:
-        if known_serial in [s for s, _ in adb_connected_devices() if s != exclude_serial]:
-            return known_serial
-        if both_at_once:
-            say(f"Expected '{label}' ({known_serial}) to already be connected but it isn't.")
+    if serial:
+        if serial in connected():
+            return serial
         while True:
-            input(f"Connect '{label}' ({known_serial}) now, unlock it, accept the USB "
+            input(f"Connect the {role_desc} ({serial}) now, unlock it, accept the USB "
                   f"debugging prompt if asked, then press Enter...")
-            if known_serial in [s for s, _ in adb_connected_devices() if s != exclude_serial]:
-                return known_serial
+            if serial in connected():
+                return serial
             if not ask_yes_no("Still not detected — keep trying?", default=True):
                 sys.exit(1)
 
-    # never seen this label connected before — detect it by diffing device lists
-    say(f"'{label}' hasn't been connected during this session yet.")
-    known_before = {s for s, _ in adb_connected_devices()}
+    # never seen this device connected before — detect it by diffing device lists
+    say(f"The {role_desc} hasn't been connected yet this session.")
+    known_before = set(connected())
     while True:
-        input(f"Connect '{label}' now, unlock it, accept the USB debugging prompt if "
-              f"asked, then press Enter...")
+        input(f"Connect the {role_desc} now, unlock it, accept the USB debugging prompt "
+              f"if asked, then press Enter...")
         now = adb_connected_devices()
         new_ones = [(s, m) for s, m in now if s not in known_before and s != exclude_serial]
         if len(new_ones) == 1:
-            serial, model = new_ones[0]
+            new_serial, model = new_ones[0]
         elif len(new_ones) > 1:
-            serial, model = ask_select("Multiple new devices detected — which one is it?",
-                                        [(f"{m} ({s})", (s, m)) for s, m in new_ones])
+            new_serial, model = ask_select("Multiple new devices detected — which one is it?",
+                                            [(f"{m} ({s})", (s, m)) for s, m in new_ones])
         else:
             say("No new device detected.")
             if ask_yes_no("Pick manually from the currently connected list instead?", default=True):
-                choice = pick_device(f"Select the device for '{label}':", exclude_serial=exclude_serial)
+                choice = pick_device(f"Select the {role_desc}:", exclude_serial=exclude_serial)
                 if not choice:
                     continue
-                serial, model = choice
+                new_serial, model = choice
             else:
                 continue
-        upsert_device(label, serial, model, role=role)
-        say(f"Registered '{label}' -> {serial} ({model})")
-        return serial
-
-
-def ensure_label(serial, model, suggested_prefix=""):
-    existing = label_for_serial(serial)
-    if existing:
-        return existing
-    default = (suggested_prefix or model).lower().replace(" ", "-")
-    default = "".join(c for c in default if c.isalnum() or c == "-") or "device"
-    label = input(f"Label for {model} ({serial}) [{default}]: ").strip() or default
-    return label
+        upsert_device(new_serial, new_serial, model, role=role)
+        say(f"Using {new_serial} ({model}) as the {role_desc}.")
+        return new_serial
 
 
 # --------------------------------------------------------------------
@@ -289,6 +276,7 @@ def step_pick_source_dest():
     header("1/8 — Pick source and destination devices")
     say("Source = the OLD phone you're migrating apps FROM.")
     say("Destination = the NEW phone you're setting up (this is also what gets debloated).")
+    say("Devices are identified by their ADB serial — no need to name them.")
     say()
 
     devices = adb_connected_devices()
@@ -302,40 +290,24 @@ def step_pick_source_dest():
         say(f"  - {m} ({s})")
     say()
 
-    both_at_once = ask_yes_no(
-        "Do you have (or will you have) BOTH phones connected at the same time at some "
-        "point during this session?", default=len(devices) >= 2)
-
     dest_serial, dest_model = pick_device("Which device is the DESTINATION (new phone)?")
-    dest_label = ensure_label(dest_serial, dest_model, "new")
-    upsert_device(dest_label, dest_serial, dest_model, role="new")
-    say(f"Destination: {dest_label} ({dest_serial})")
+    upsert_device(dest_serial, dest_serial, dest_model, role="new")
+    say(f"Destination: {dest_model} ({dest_serial})")
 
     remaining = [(s, m) for s, m in devices if s != dest_serial]
     if remaining:
         src_serial, src_model = pick_device("Which device is the SOURCE (old phone)?",
                                              exclude_serial=dest_serial)
-        src_label = ensure_label(src_serial, src_model, "old")
-        upsert_device(src_label, src_serial, src_model, role="old")
+        upsert_device(src_serial, src_serial, src_model, role="old")
     else:
-        say("Source phone not connected yet — that's fine. We'll detect it automatically")
-        say("the moment it's needed and you plug it in.")
-        src_label = input("Give the source phone a label now (e.g. 'old-pixel'): ").strip() or "old-phone"
-        # register the label with no serial yet; resolve_serial() will fill it in on first use
-        upsert_device(src_label, "", "", role="old")
+        say("Source phone not connected yet — that's fine, we'll detect it automatically")
+        say("the moment it's needed: just plug it in when prompted.")
+        src_serial = None
 
-    if not both_at_once:
-        say()
-        say("OK — we'll prompt you to (re)connect whichever phone is needed at each step.")
-
-    return {
-        "dest_label": dest_label, "dest_serial": dest_serial,
-        "src_label": src_label,
-        "both_at_once": both_at_once,
-    }
+    return {"dest_serial": dest_serial, "src_serial": src_serial}
 
 
-def step_pick_template(dest_label):
+def step_pick_template(dest_serial):
     header("2/8 — Debloat catalog template")
     templates = sorted(p.stem for p in TEMPLATES_DIR.glob("*.tsv")) if TEMPLATES_DIR.exists() else []
     if not templates:
@@ -343,9 +315,9 @@ def step_pick_template(dest_label):
         return None
 
     rows = read_devices()
-    existing_catalog = next((r["catalog"] for r in rows if r["label"] == dest_label and r.get("catalog")), None)
+    existing_catalog = next((r["catalog"] for r in rows if r["serial"] == dest_serial and r.get("catalog")), None)
     if existing_catalog and (REPO_ROOT / existing_catalog).exists():
-        say(f"'{dest_label}' already has a catalog: {existing_catalog}")
+        say(f"{dest_serial} already has a catalog: {existing_catalog}")
         if not ask_yes_no("Re-seed it from a template (overwrites any edits)?", default=False):
             return REPO_ROOT / existing_catalog
 
@@ -357,27 +329,27 @@ def step_pick_template(dest_label):
 
     STATE_DIR.mkdir(exist_ok=True)
     CATALOGS_DIR.mkdir(exist_ok=True)
-    dest_catalog = CATALOGS_DIR / f"{dest_label}.tsv"
+    dest_catalog = CATALOGS_DIR / f"{dest_serial}.tsv"
     dest_catalog.write_text((TEMPLATES_DIR / f"{choice}.tsv").read_text())
-    upsert_device(dest_label, "", "", catalog=f"state/catalogs/{dest_label}.tsv")
-    say(f"Seeded state/catalogs/{dest_label}.tsv from template '{choice}'.")
+    upsert_device(dest_serial, "", "", catalog=f"state/catalogs/{dest_serial}.tsv")
+    say(f"Seeded state/catalogs/{dest_serial}.tsv from template '{choice}'.")
     return dest_catalog
 
 
-def step_debloat(dest_label, both_at_once):
+def step_debloat(dest_serial):
     header("3/8 — 4/8 — Debloat")
-    resolve_serial(dest_label, "new", both_at_once)
+    dest_serial = resolve_serial(dest_serial, "new")
 
     say("Dry run first (no changes made yet)...")
-    run(["./scripts/debloat.sh", "status", dest_label])
+    run(["./scripts/debloat.sh", "status", dest_serial])
 
     if ask_yes_no("\nRun the real debloat now (apply the catalog to the device)?", default=True):
-        run(["./scripts/debloat.sh", "apply", dest_label])
+        run(["./scripts/debloat.sh", "apply", dest_serial])
     else:
         say("Skipped — nothing changed on the device.")
 
 
-def step_migrate(src_label, dest_label, both_at_once):
+def step_migrate(src_serial, dest_serial):
     header("5/8 — Port apps from the old device?")
     if not ask_yes_no("Migrate apps from the source device to the destination device?", default=True):
         return
@@ -385,12 +357,12 @@ def step_migrate(src_label, dest_label, both_at_once):
     MIGRATION_STATE.mkdir(parents=True, exist_ok=True)
 
     say("\n-- scanning source device --")
-    resolve_serial(src_label, "old", both_at_once)
-    run(["./scripts/migrate.sh", "scan-old", src_label], check=True)
+    src_serial = resolve_serial(src_serial, "old")
+    run(["./scripts/migrate.sh", "scan-old", src_serial], check=True)
 
     say("\n-- scanning destination device --")
-    resolve_serial(dest_label, "new", both_at_once)
-    run(["./scripts/migrate.sh", "scan-new", dest_label], check=True)
+    dest_serial = resolve_serial(dest_serial, "new")
+    run(["./scripts/migrate.sh", "scan-new", dest_serial], check=True)
 
     run(["./scripts/migrate.sh", "plan"], check=True)
 
@@ -420,12 +392,12 @@ def step_migrate(src_label, dest_label, both_at_once):
         return
 
     say("\n-- pulling APKs from source --")
-    resolve_serial(src_label, "old", both_at_once)
-    run(["./scripts/migrate.sh", "pull", src_label], check=True)
+    src_serial = resolve_serial(src_serial, "old")
+    run(["./scripts/migrate.sh", "pull", src_serial], check=True)
 
     say("\n-- installing on destination --")
-    resolve_serial(dest_label, "new", both_at_once)
-    run(["./scripts/migrate.sh", "install", dest_label], check=True)
+    dest_serial = resolve_serial(dest_serial, "new")
+    run(["./scripts/migrate.sh", "install", dest_serial], check=True)
 
 
 def _parse_migration_config(path):
@@ -461,13 +433,13 @@ def _rewrite_migration_config(path, rows, chosen_indices):
     path.write_text("\n".join(header_lines + lines) + "\n")
 
 
-def step_lawnchair(dest_label, both_at_once):
+def step_lawnchair(dest_serial):
     header("7/8 — Lawnchair launcher")
     if not ask_yes_no("Set up Lawnchair as the home launcher on the destination device?",
                        default=False):
         return
 
-    dest_serial = resolve_serial(dest_label, "new", both_at_once)
+    dest_serial = resolve_serial(dest_serial, "new")
 
     installed = subprocess.run(
         ["adb", "-s", dest_serial, "shell", "pm", "list", "packages", "app.lawnchair"],
@@ -504,13 +476,13 @@ def step_lawnchair(dest_label, both_at_once):
             "Settings > Apps > Default apps > Home app > Lawnchair.")
 
 
-def step_layout_plan(dest_label, both_at_once):
+def step_layout_plan(dest_serial):
     header("8/8 — Home screen layout plan")
     if not ask_yes_no("Generate a draft layout plan (grouping apps into folders/pages) "
                        "for you to edit?", default=True):
         return
 
-    dest_serial = resolve_serial(dest_label, "new", both_at_once)
+    dest_serial = resolve_serial(dest_serial, "new")
 
     installed = subprocess.run(
         ["adb", "-s", dest_serial, "shell", "pm", "list", "packages", "-3"],
@@ -518,10 +490,10 @@ def step_layout_plan(dest_label, both_at_once):
     ).stdout
     pkgs = sorted(l.replace("package:", "").strip() for l in installed.splitlines() if l.strip())
 
-    plan_path = MIGRATION_STATE / f"{dest_label}_layout_plan.md"
+    plan_path = MIGRATION_STATE / f"{dest_serial}_layout_plan.md"
     plan_path.parent.mkdir(parents=True, exist_ok=True)
     lines = [
-        f"# Home screen layout plan — {dest_label}",
+        f"# Home screen layout plan — {dest_serial}",
         "",
         "Edit this however you like: group apps under headings as folders, reorder for",
         "page order, delete apps you don't want on the home screen (they stay in the app",
@@ -555,11 +527,11 @@ def main():
     say("individual scripts (see README) to pick up where you left off.")
 
     ctx = step_pick_source_dest()
-    step_pick_template(ctx["dest_label"])
-    step_debloat(ctx["dest_label"], ctx["both_at_once"])
-    step_migrate(ctx["src_label"], ctx["dest_label"], ctx["both_at_once"])
-    step_lawnchair(ctx["dest_label"], ctx["both_at_once"])
-    step_layout_plan(ctx["dest_label"], ctx["both_at_once"])
+    step_pick_template(ctx["dest_serial"])
+    step_debloat(ctx["dest_serial"])
+    step_migrate(ctx["src_serial"], ctx["dest_serial"])
+    step_lawnchair(ctx["dest_serial"])
+    step_layout_plan(ctx["dest_serial"])
 
     header("Done")
     say("Re-run ./run.sh anytime to pick up where you left off, or use the individual")

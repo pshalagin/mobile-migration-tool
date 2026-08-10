@@ -1,14 +1,19 @@
 #!/usr/bin/env bash
 #
 # scripts/devices.sh — one-time-ish setup: detect connected ADB
-# device(s), save serial+model under a label you choose, pick a
-# debloat package-catalog template to seed that device's live catalog,
-# and optionally tag it as the "old" or "new" device for migrate.sh so
-# scan-old/scan-new/pull/install never need a device arg again.
+# device(s), pick a debloat package-catalog template to seed that
+# device's live catalog, and optionally tag it as the "old" or "new"
+# device for migrate.sh so scan-old/scan-new/pull/install never need a
+# device arg again. The ADB serial IS the device's identity — nothing
+# to name or remember.
 #
 # Run via ./run.sh devices <command> — see run.sh at the repo root.
 #
 # state/devices.tsv columns: label, serial, model, catalog, role
+# (`label` is always just the serial, kept as its own column so this
+# file's schema matches the resolution logic in lib/resolve_device.sh,
+# which accepts either a label or a raw serial — with label==serial
+# those are the same thing here.)
 # `catalog` is a repo-root-relative path (e.g. state/catalogs/x.tsv),
 # a per-device COPY of a templates/*.tsv file — editable independently
 # per device without touching the template it came from.
@@ -16,13 +21,13 @@
 # at a time — assigning it to a new device clears it from the old one.
 #
 # Usage:
-#   devices.sh init                    Detect + label + catalog + role
-#   devices.sh list                    Show saved devices
-#   devices.sh forget <label>          Remove a saved device
-#   devices.sh templates               List available catalog templates
-#   devices.sh set-role <label> <old|new|none>
-#                                       Assign/change a device's migration
-#                                       role without re-running init
+#   devices.sh init                     Detect + pick catalog template + role
+#   devices.sh list                     Show saved devices
+#   devices.sh forget <serial>          Remove a saved device
+#   devices.sh templates                List available catalog templates
+#   devices.sh set-role <serial> <old|new|none>
+#                                        Assign/change a device's migration
+#                                        role without re-running init
 #
 set -uo pipefail
 
@@ -39,12 +44,13 @@ Usage: ./run.sh devices <command>
 
 Commands:
   init                          Detect connected ADB device(s), prompt
-                                 for a label, catalog template, and
-                                 migration role (old/new/none) each.
+                                 for a catalog template and migration
+                                 role (old/new/none) each. Devices are
+                                 identified by ADB serial, nothing to name.
   list                          Show saved devices.
-  forget <label>                Remove a saved device by label.
+  forget <serial>                Remove a saved device.
   templates                     List available catalog templates ($TEMPLATES_DIR).
-  set-role <label> <old|new|none>
+  set-role <serial> <old|new|none>
                                  Assign/change a device's migration role
                                  after the fact, no re-init needed.
 EOF
@@ -189,23 +195,16 @@ cmd_init() {
 
     for serial in "${serials[@]}"; do
         if awk -F'\t' -v s="$serial" 'NR>1 && $2==s{f=1} END{exit !f}' "$DEVICES_FILE"; then
-            existing_label="$(label_for_serial "$serial")"
-            echo "Already known: $serial -> '$existing_label' (run 'forget $existing_label' first to relabel, or 'set-role' to change its role)"
+            echo "Already known: $serial (run 'forget $serial' first to reset it, or 'set-role' to change its role)"
             continue
         fi
 
         model="$(adb -s "$serial" shell getprop ro.product.model < /dev/null | tr -d '\r\n')"
-        default_label="$(echo "$model" | tr '[:upper:] ' '[:lower:]-' | tr -cd 'a-z0-9-')"
-        [[ -z "$default_label" ]] && default_label="device"
-
         echo "Found device $serial ($model)"
-        read -r -p "Label for this device [$default_label]: " label
-        label="${label:-$default_label}"
 
-        if awk -F'\t' -v l="$label" 'NR>1 && $1==l{f=1} END{exit !f}' "$DEVICES_FILE"; then
-            echo "Label '$label' is already used by another serial — pick another, run again."
-            continue
-        fi
+        # The ADB serial IS the device's identity — no separate label
+        # to invent or remember.
+        local label="$serial"
 
         local template catalog=""
         template="$(pick_template)"
@@ -220,7 +219,7 @@ cmd_init() {
 
         printf "%s\t%s\t%s\t%s\t%s\n" "$label" "$serial" "$model" "$catalog" "$role" >> "$DEVICES_FILE"
         [[ -n "$role" ]] && assign_role "$label" "$role"   # clears the role from any other device
-        echo "Saved: $label -> $serial${role:+ (role: $role)}"
+        echo "Saved: $serial${role:+ (role: $role)}"
     done
 
     echo
@@ -239,7 +238,7 @@ cmd_list() {
 
 cmd_forget() {
     local label="${1:-}"
-    [[ -z "$label" ]] && { echo "Usage: ./run.sh devices forget <label>"; exit 1; }
+    [[ -z "$label" ]] && { echo "Usage: ./run.sh devices forget <serial>"; exit 1; }
     ensure_devices_schema
     tmp="$(mktemp)"
     awk -F'\t' -v l="$label" 'NR==1 || $1!=l' "$DEVICES_FILE" > "$tmp" && mv "$tmp" "$DEVICES_FILE"
@@ -249,13 +248,13 @@ cmd_forget() {
 cmd_set_role() {
     local label="${1:-}" role="${2:-}"
     if [[ -z "$label" || -z "$role" ]]; then
-        echo "Usage: ./run.sh devices set-role <label> <old|new|none>"
+        echo "Usage: ./run.sh devices set-role <serial> <old|new|none>"
         exit 1
     fi
     ensure_devices_schema
 
     if ! awk -F'\t' -v l="$label" 'NR>1 && $1==l{f=1} END{exit !f}' "$DEVICES_FILE"; then
-        echo "No device labeled '$label'. Run './run.sh devices list' to see saved devices."
+        echo "No device known with serial '$label'. Run './run.sh devices list' to see saved devices."
         exit 1
     fi
 
