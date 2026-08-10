@@ -150,52 +150,110 @@ extract_og_title() {
         | sed -E 's/content="([^"]*)"/\1/'
 }
 
-fetch_app_name() {
+extract_og_description() {
+    grep -o '<meta[^>]*property="og:description"[^>]*>' \
+        | head -1 \
+        | grep -o 'content="[^"]*"' \
+        | sed -E 's/content="([^"]*)"/\1/'
+}
+
+# Shared package-name/description cache, consulted by both this
+# command and wizard.py's layout-plan step — a package looked up once
+# by either tool is never re-fetched by the other. Columns:
+# package, name, description, source (play|rustore|fdroid|none),
+# fetched_at (informational only, nothing auto-expires it — delete a
+# row by hand to force a re-lookup).
+APP_INFO_FILE="$REPO_ROOT/state/app_info.tsv"
+
+ensure_app_info_file() {
+    mkdir -p "$(dirname "$APP_INFO_FILE")"
+    [[ -f "$APP_INFO_FILE" ]] || printf "package\tname\tdescription\tsource\tfetched_at\n" > "$APP_INFO_FILE"
+}
+
+# Prints "name\tdescription\tsource" on stdout and returns 0 if this
+# package has been looked up before (regardless of whether anything
+# was found — an empty name means "already tried, nothing found").
+# Returns 1 if it's never been looked up.
+app_info_lookup() {
     local pkg="$1"
-    local name=""
+    ensure_app_info_file
+    awk -F'\t' -v p="$pkg" 'NR>1 && $1==p {print $2"\t"$3"\t"$4; found=1} END{exit !found}' "$APP_INFO_FILE"
+}
 
-    # Try Google Play's public web listing first — widest catalog,
-    # works even for apps unavailable in your region (page still
-    # renders a title in most cases).
-    name="$(curl -s -L --max-time 8 -A "Mozilla/5.0" \
-        "https://play.google.com/store/apps/details?id=${pkg}&hl=en" \
-        | extract_og_title)"
+app_info_save() {
+    local pkg="$1" name="$2" description="$3" source="$4"
+    ensure_app_info_file
+    local tmp
+    tmp="$(mktemp)"
+    local now
+    now="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo "")"
+    awk -F'\t' -v OFS='\t' -v p="$pkg" 'NR==1{print; next} $1!=p{print}' "$APP_INFO_FILE" > "$tmp"
+    printf "%s\t%s\t%s\t%s\t%s\n" "$pkg" "$name" "$description" "$source" "$now" >> "$tmp"
+    mv "$tmp" "$APP_INFO_FILE"
+}
 
-    # Fallback: RuStore's public catalog page
-    if [[ -z "$name" ]]; then
-        name="$(curl -s -L --max-time 8 -A "Mozilla/5.0" \
-            "https://www.rustore.ru/catalog/app/${pkg}" \
-            | extract_og_title)"
+# Fetches name+description for a package (Play -> RuStore -> F-Droid,
+# same order as before), consulting/populating the shared cache above
+# rather than always hitting the network.
+fetch_app_info() {
+    local pkg="$1"
+    local cached
+    if cached="$(app_info_lookup "$pkg")"; then
+        echo "$cached"
+        return 0
     fi
 
-    # Fallback: F-Droid API (JSON), covers FOSS apps not on either
-    # store. Real shape is {"localized":{"en-US":{"name": "..."}}}, so
-    # this needs a real JSON parser rather than a regex — use python3
-    # (ships with macOS) if available, otherwise skip this fallback.
-    if [[ -z "$name" ]] && command -v python3 >/dev/null 2>&1; then
-        name="$(curl -s -L --max-time 8 "https://f-droid.org/api/v1/packages/${pkg}" \
-            | python3 -c '
+    local name="" description="" source="none" html=""
+
+    html="$(curl -s -L --max-time 8 -A "Mozilla/5.0" \
+        "https://play.google.com/store/apps/details?id=${pkg}&hl=en")"
+    name="$(echo "$html" | extract_og_title)"
+    if [[ -n "$name" ]]; then
+        description="$(echo "$html" | extract_og_description)"
+        source="play"
+    else
+        html="$(curl -s -L --max-time 8 -A "Mozilla/5.0" \
+            "https://www.rustore.ru/catalog/app/${pkg}")"
+        name="$(echo "$html" | extract_og_title)"
+        if [[ -n "$name" ]]; then
+            description="$(echo "$html" | extract_og_description)"
+            source="rustore"
+        elif command -v python3 >/dev/null 2>&1; then
+            local fd
+            fd="$(curl -s -L --max-time 8 "https://f-droid.org/api/v1/packages/${pkg}" \
+                | python3 -c '
 import json, sys
 try:
     d = json.load(sys.stdin)
     loc = d.get("localized", {})
     en = loc.get("en-US") or next(iter(loc.values()), {})
-    print(en.get("name", ""))
+    print(en.get("name", "") + "\t" + en.get("summary", ""))
 except Exception:
-    pass
+    print("\t")
 ' 2>/dev/null)"
+            name="$(echo "$fd" | cut -f1)"
+            description="$(echo "$fd" | cut -f2)"
+            [[ -n "$name" ]] && source="fdroid"
+        fi
     fi
 
-    echo "$name"
+    app_info_save "$pkg" "$name" "$description" "$source"
+    printf "%s\t%s\t%s\n" "$name" "$description" "$source"
+}
+
+# Back-compat wrapper — name lookup only, same interface as before.
+fetch_app_name() {
+    fetch_app_info "$1" | cut -f1
 }
 
 cmd_enrich() {
     [[ -f "$CONFIG_FILE" ]] || { echo "Missing $CONFIG_FILE — run 'plan' first."; exit 1; }
     command -v curl >/dev/null 2>&1 || { echo "curl not found in PATH — needed for enrich."; exit 1; }
+    ensure_app_info_file
 
     local tmp
     tmp="$(mktemp)"
-    local looked_up=0 found=0
+    local looked_up=0 found=0 from_cache=0
 
     while IFS= read -r line; do
         if [[ -z "$line" || "$line" == \#* ]]; then
@@ -213,11 +271,14 @@ cmd_enrich() {
             | sed -E 's/^"[^"]*" — //')"
 
         printf "Looking up %-45s ... " "$pkg" >&2
+        local already_cached=false
+        app_info_lookup "$pkg" >/dev/null && already_cached=true
         name="$(fetch_app_name "$pkg")"
         ((looked_up++))
+        $already_cached && ((from_cache++))
 
         if [[ -n "$name" ]]; then
-            echo "$name" >&2
+            echo "$name$($already_cached && echo ' (cached)')" >&2
             ((found++))
             printf "%-10s %-45s %-12s \"%s\" — %s\n" "$action" "$pkg" "$src" "$name" "$rest" >> "$tmp"
         else
@@ -225,13 +286,14 @@ cmd_enrich() {
             printf "%-10s %-45s %-12s %s\n" "$action" "$pkg" "$src" "$rest" >> "$tmp"
         fi
 
-        sleep 0.3   # be polite, avoid hammering either store
+        $already_cached || sleep 0.3   # only throttle on actual network lookups
     done < "$CONFIG_FILE"
 
     mv "$tmp" "$CONFIG_FILE"
     echo
-    echo "Looked up: $looked_up, names found: $found"
+    echo "Looked up: $looked_up (from cache: $from_cache), names found: $found"
     echo "Updated $CONFIG_FILE — review the (\"App Name\") tags, then edit PORT/SKIP as needed."
+    echo "Cache: $APP_INFO_FILE (shared with the layout-plan step too)"
 }
 
 cmd_pull() {
