@@ -2,8 +2,10 @@
 #
 # debloat.sh — declarative, idempotent ADB debloat reconciler.
 #
-# packages.tsv is the single source of truth: package <TAB> desired
-# state <TAB> category <TAB> note. Desired states:
+# Each device gets its own catalog (package <TAB> desired state <TAB>
+# category <TAB> note), seeded from a templates/*.tsv template at
+# ./devices.sh init time and stored at catalogs/<label>.tsv — editable
+# independently per device from then on. Desired states:
 #   absent    -> should not be present. Reconciler tries `pm uninstall`;
 #                if that fails with the known "protected app" pattern
 #                (Failure [-1000] / DELETE_FAILED_INTERNAL_ERROR), it
@@ -20,45 +22,50 @@
 #                things you can't afford to lose.
 #   optional  -> present by default, no action taken. These are
 #                feature-dependent apps where there's no universally
-#                right answer — edit packages.tsv yourself and flip
+#                right answer — edit the catalog yourself and flip
 #                the state to `absent` for anything you don't use.
 #
 # Run against real device state every time — safe to re-run as often
 # as you want; already-satisfied rows are no-ops.
 #
 # Usage:
-#   ./debloat.sh status [serial-or-label]   Compare packages.tsv vs device, no changes
-#   ./debloat.sh apply  [serial-or-label]   Reconcile device to match packages.tsv
+#   ./debloat.sh status [serial-or-label]   Compare catalog vs device, no changes
+#   ./debloat.sh apply  [serial-or-label]   Reconcile device to match its catalog
 #   ./debloat.sh list   [state]             Print the catalog (optionally filtered), no device needed
 #
 # The device arg is optional if exactly one ADB device is connected.
-# For labels instead of typing raw serials, run ./devices.sh init once
-# from the repo root (see lib/resolve_device.sh).
+# Run ./devices.sh init once to label devices and pick their catalog
+# template — see lib/resolve_device.sh.
 #
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DB_FILE="${DEBLOAT_DB:-$SCRIPT_DIR/packages.tsv}"
-source "$SCRIPT_DIR/../lib/resolve_device.sh"
+source "$SCRIPT_DIR/lib/resolve_device.sh"
+
+DEFAULT_TEMPLATE="$REPO_ROOT/templates/redmi15c.tsv"
+DB_FILE=""   # resolved per-invocation in resolve_catalog()
 
 usage() {
     cat <<EOF
 Usage: $0 <command> [args]
 
 Commands:
-  status [serial-or-label]   Dry-run: compare packages.tsv against the
-                    device, report drift per package, change nothing.
+  status [serial-or-label]   Dry-run: compare the device's catalog
+                    against the device, report drift, change nothing.
                     Device arg optional if only one is connected.
-  apply  [serial-or-label]   Reconcile the device to match packages.tsv.
+  apply  [serial-or-label]   Reconcile the device to match its catalog.
                     Idempotent — safe to re-run any time.
-  list   [state]    Print the catalog. Optionally filter by state
-                    (absent|disabled|keep|optional). No device needed.
+  list   [state]    Print the resolved catalog. Optionally filter by
+                    state (absent|disabled|keep|optional). No device
+                    needed if DEBLOAT_DB is set or only one device is
+                    registered/connected.
 
 Env:
-  DEBLOAT_DB   Override the catalog file (default: $DB_FILE)
+  DEBLOAT_DB   Force a specific catalog file, skipping device-based lookup.
 
-Tip: run ../devices.sh init once to label your device(s), then pass
-the label instead of hunting down the serial each time.
+Catalog resolution order: \$DEBLOAT_DB env override -> the catalog
+registered for this device in devices.tsv (set via ./devices.sh init)
+-> $DEFAULT_TEMPLATE as a last-resort default.
 EOF
 }
 
@@ -66,7 +73,27 @@ require_adb() {
     command -v adb >/dev/null 2>&1 || { echo "adb not found in PATH."; exit 1; }
 }
 
-require_db() {
+# Sets global DB_FILE for the given resolved serial (may be empty if
+# called from a device-less context — falls back to default template).
+resolve_catalog() {
+    local serial="${1:-}"
+
+    if [[ -n "${DEBLOAT_DB:-}" ]]; then
+        DB_FILE="$DEBLOAT_DB"
+    elif [[ -n "$serial" ]]; then
+        local cat
+        cat="$(catalog_for_serial "$serial")"
+        if [[ -n "$cat" && -f "$REPO_ROOT/$cat" ]]; then
+            DB_FILE="$REPO_ROOT/$cat"
+        else
+            DB_FILE="$DEFAULT_TEMPLATE"
+            echo "No catalog registered for this device — using default template ($DB_FILE)." >&2
+            echo "Run ./devices.sh init to set up a proper per-device catalog." >&2
+        fi
+    else
+        DB_FILE="$DEFAULT_TEMPLATE"
+    fi
+
     [[ -f "$DB_FILE" ]] || { echo "Catalog not found: $DB_FILE"; exit 1; }
 }
 
@@ -86,8 +113,9 @@ pkg_disabled() {
 }
 
 cmd_list() {
-    require_db
+    resolve_catalog ""
     local filter="${1:-}"
+    echo "Catalog: $DB_FILE" >&2
     awk -F'\t' -v filter="$filter" '
         NR==1 { next }
         filter=="" || $2==filter {
@@ -97,11 +125,14 @@ cmd_list() {
 }
 
 cmd_status() {
-    require_db; require_adb
+    require_adb
     local serial
     serial="$(resolve_device "${1:-}")" || exit 1
+    resolve_catalog "$serial"
 
-    echo "Snapshotting device ($serial)..."
+    echo "Device: $serial"
+    echo "Catalog: $DB_FILE"
+    echo "Snapshotting device..."
     snapshot_device "$serial"
     echo
 
@@ -154,11 +185,14 @@ cmd_status() {
 }
 
 cmd_apply() {
-    require_db; require_adb
+    require_adb
     local serial
     serial="$(resolve_device "${1:-}")" || exit 1
+    resolve_catalog "$serial"
 
-    echo "Snapshotting device ($serial)..."
+    echo "Device: $serial"
+    echo "Catalog: $DB_FILE"
+    echo "Snapshotting device..."
     snapshot_device "$serial"
     echo
 

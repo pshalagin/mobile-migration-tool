@@ -1,13 +1,19 @@
 #!/usr/bin/env bash
 #
-# lib/resolve_device.sh — shared device registry, sourced by debloat.sh
-# and migrate_apps.sh. Turns a saved label (from devices.tsv, set up
-# via ./devices.sh init) or a raw ADB serial into a validated, currently
+# lib/resolve_device.sh — shared device registry, sourced by every
+# tool script. Turns a saved label (from devices.tsv, set up via
+# ./devices.sh init) or a raw ADB serial into a validated, currently
 # connected serial. If no arg is given and exactly one device is
 # connected, that device is used automatically — no config needed for
 # the single-device case.
 #
-DEVICES_FILE="${DEVICES_FILE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/devices.tsv}"
+# devices.tsv columns: label, serial, model, catalog
+# `catalog` is a repo-root-relative path to that device's debloat
+# packages.tsv (copied from a template at init time) — resolved via
+# catalog_for_serial() below.
+#
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+DEVICES_FILE="${DEVICES_FILE:-$REPO_ROOT/devices.tsv}"
 
 list_connected() {
     adb devices | awk 'NR>1 && $2=="device" {print $1}'
@@ -23,6 +29,14 @@ label_for_serial() {
     local serial="$1"
     [[ -f "$DEVICES_FILE" ]] || return 0
     awk -F'\t' -v s="$serial" 'NR>1 && $2==s {print $1}' "$DEVICES_FILE"
+}
+
+# Repo-root-relative catalog path registered for this serial at init
+# time, or empty if none/not found. Caller decides the fallback.
+catalog_for_serial() {
+    local serial="$1"
+    [[ -f "$DEVICES_FILE" ]] || return 0
+    awk -F'\t' -v s="$serial" 'NR>1 && $2==s {print $4}' "$DEVICES_FILE"
 }
 
 # Prints a resolved, connected serial on stdout; errors (with guidance)

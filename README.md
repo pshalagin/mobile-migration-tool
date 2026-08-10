@@ -2,38 +2,66 @@
 
 ADB-based tooling to set up a phone from scratch: strip bloatware declaratively, and migrate apps over from an old device without needing both phones connected at once.
 
-Built and verified against a Redmi 15C (HyperOS 2 / Android 15), but `debloat/packages.tsv` is plain data — adapt it for other devices by editing the catalog.
+All scripts live flat at the repo root — run them directly (`./debloat.sh ...`), or through the single entry point `./mmt.sh <tool> ...` if you'd rather not remember which file does what.
 
-## debloat/ — declarative debloat reconciler
+## 0. One-time setup: `./devices.sh init`
 
-`packages.tsv` is the single source of truth: one row per package, with the state you want it in (`absent`, `disabled`, `keep`, or `optional`). `debloat.sh` reconciles the real device to match it, and is safe to re-run at any time — already-satisfied packages are no-ops, nothing gets uninstalled twice or errors out on a second pass.
+Detects connected ADB device(s), asks you to label each one, and lets you pick a debloat catalog template to seed that device's own editable copy under `catalogs/<label>.tsv`. From then on, every other command accepts that label instead of a raw serial — and if only one device is connected, you can skip the device arg entirely.
 
 ```
-./debloat/debloat.sh status <serial>   # dry run: compare catalog vs device, no changes
-./debloat/debloat.sh apply <serial>    # reconcile device to match the catalog
-./debloat/debloat.sh list [state]      # print the catalog, no device needed
+./devices.sh init          # detect + label + pick a catalog template
+./devices.sh list          # show saved devices
+./devices.sh templates     # list available catalog templates
+./devices.sh forget <label>
 ```
 
-Edit `packages.tsv` directly to change what happens on the next `apply` — flip a package's state, add a new one, whatever. It's a plain TSV (package, state, category, note), diffable and reviewable in a PR.
+## `./debloat.sh` — declarative debloat reconciler
+
+Each device's catalog (`catalogs/<label>.tsv`, seeded from a `templates/*.tsv`) is the single source of truth: one row per package, with the state you want it in — `absent`, `disabled`, `keep`, or `optional`. `debloat.sh` reconciles the real device to match it, and is safe to re-run at any time — already-satisfied packages are no-ops, nothing gets uninstalled twice or errors out on a second pass.
+
+```
+./debloat.sh status [serial-or-label]   # dry run: compare catalog vs device, no changes
+./debloat.sh apply  [serial-or-label]   # reconcile device to match the catalog
+./debloat.sh list   [state]             # print the resolved catalog, no device needed
+```
+
+Edit a device's `catalogs/<label>.tsv` directly to change what happens on the next `apply` — flip a package's state, add a new one, whatever. It's a plain TSV (package, state, category, note), diffable and reviewable in a PR.
 
 One behavior worth knowing: a chunk of HyperOS system apps refuse full removal (`pm uninstall` fails with `Failure [-1000]`) even though they're not documented as protected anywhere. Rather than hand-maintaining a list of which ones do this, `apply` just tries the uninstall, detects that specific failure pattern, and automatically falls back to `pm disable-user` — so the catalog only needs to say `absent`, not which mechanism achieves it.
 
 `keep`-state packages get drift detection: if one goes missing (removed by an earlier mistake, a stray script, whatever), both `status` and `apply` flag it explicitly instead of staying silent.
 
-## migrate/ — multipass app migration
+### Adding a template for another device
+
+Drop a new `packages.tsv`-formatted file at `templates/<name>.tsv` (same 4-column TSV: package, state, category, note) and commit it. It shows up automatically in `./devices.sh templates` and as a pick-list option in `./devices.sh init` — no code changes needed. `templates/redmi15c.tsv` is there now as the first one.
+
+## `./migrate.sh` — multipass app migration
 
 Compares installed apps between an old and new device and proposes (or executes) a migration path per app, without requiring both phones connected simultaneously — each step reads/writes state under `./migration_state/`.
 
 ```
-./migrate/migrate_apps.sh scan-old <old_serial>
-./migrate/migrate_apps.sh scan-new <new_serial>
-./migrate/migrate_apps.sh plan
-./migrate/migrate_apps.sh enrich      # look up real app names from public store listings
+./migrate.sh scan-old <old_serial_or_label>
+./migrate.sh scan-new <new_serial_or_label>
+./migrate.sh plan
+./migrate.sh enrich      # look up real app names from public store listings
 # edit migration_state/migration_config.txt by hand: PORT or SKIP each app
-./migrate/migrate_apps.sh pull <old_serial>
-./migrate/migrate_apps.sh install <new_serial>
+./migrate.sh pull <old_serial_or_label>
+./migrate.sh install <new_serial_or_label>
+```
+
+## Layout
+
+```
+mmt.sh              single entry point (./mmt.sh devices|debloat|migrate ...)
+devices.sh           device label registry + catalog template picker
+debloat.sh            declarative debloat reconciler
+migrate.sh             multipass app migration
+lib/resolve_device.sh   shared device/catalog resolution, sourced by the above
+templates/*.tsv          debloat catalog templates, one per device model
+catalogs/<label>.tsv       per-device live catalog, seeded from a template at init
+devices.tsv                device registry (generated by devices.sh init)
 ```
 
 ## Credits
 
-The initial `packages.tsv` bloatware classification started from [matthieu-pierson/debloat-hyperos-adb](https://github.com/matthieu-pierson/debloat-hyperos-adb) (MIT licensed) and was substantially extended: device-specific corrections (package name casing bugs, protected-app behavior), ~50 additional packages researched individually for necessity, and a rework from imperative shell command lists into this declarative/idempotent format.
+The initial `templates/redmi15c.tsv` bloatware classification started from [matthieu-pierson/debloat-hyperos-adb](https://github.com/matthieu-pierson/debloat-hyperos-adb) (MIT licensed) and was substantially extended: device-specific corrections (package name casing bugs, protected-app behavior), ~50 additional packages researched individually for necessity, and a rework from imperative shell command lists into this declarative/idempotent format.

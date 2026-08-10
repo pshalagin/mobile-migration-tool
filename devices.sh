@@ -1,21 +1,26 @@
 #!/usr/bin/env bash
 #
-# devices.sh — one-time-ish setup: detect connected ADB device(s) and
-# save serial+model under a label you choose into devices.tsv. Both
-# debloat.sh and migrate_apps.sh accept that label anywhere they'd
-# normally take a raw serial, so you stop needing to `adb devices` and
-# copy-paste serials by hand, and "more than one device/emulator"
-# ambiguity goes away.
+# devices.sh — one-time-ish setup: detect connected ADB device(s),
+# save serial+model under a label you choose, and pick a debloat
+# package-catalog template to seed that device's live catalog.
+#
+# devices.tsv columns: label, serial, model, catalog
+# `catalog` is a repo-root-relative path (e.g. catalogs/redmi15c.tsv),
+# a per-device COPY of a templates/*.tsv file — editable independently
+# per device without touching the template it came from.
 #
 # Usage:
-#   ./devices.sh init            Detect + label connected device(s)
-#   ./devices.sh list            Show saved devices
-#   ./devices.sh forget <label>  Remove a saved device
+#   ./devices.sh init              Detect + label + pick catalog template
+#   ./devices.sh list              Show saved devices
+#   ./devices.sh forget <label>    Remove a saved device
+#   ./devices.sh templates         List available catalog templates
 #
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEVICES_FILE="$SCRIPT_DIR/devices.tsv"
+TEMPLATES_DIR="$SCRIPT_DIR/templates"
+CATALOGS_DIR="$SCRIPT_DIR/catalogs"
 source "$SCRIPT_DIR/lib/resolve_device.sh"
 
 usage() {
@@ -23,16 +28,73 @@ usage() {
 Usage: $0 <command>
 
 Commands:
-  init            Detect connected ADB device(s), prompt for a label
-                   each, save serial+model into devices.tsv.
-  list            Show saved devices.
-  forget <label>  Remove a saved device by label.
+  init              Detect connected ADB device(s), prompt for a label
+                     and a catalog template each, save to devices.tsv.
+  list              Show saved devices.
+  forget <label>    Remove a saved device by label.
+  templates         List available catalog templates ($TEMPLATES_DIR).
 EOF
+}
+
+cmd_templates() {
+    if [[ ! -d "$TEMPLATES_DIR" ]] || [[ -z "$(ls "$TEMPLATES_DIR"/*.tsv 2>/dev/null)" ]]; then
+        echo "No templates found in $TEMPLATES_DIR"
+        return
+    fi
+    echo "Available catalog templates:"
+    for f in "$TEMPLATES_DIR"/*.tsv; do
+        local name rows
+        name="$(basename "$f" .tsv)"
+        rows=$(($(wc -l < "$f") - 1))
+        echo " - $name ($rows packages)"
+    done
+    echo
+    echo "To add one: drop a new packages.tsv-formatted file at"
+    echo "  $TEMPLATES_DIR/<name>.tsv"
+    echo "and commit it — it'll show up here and in 'devices.sh init' automatically."
+}
+
+pick_template() {
+    # Prints the chosen template's repo-root-relative catalogs/ path on
+    # stdout (empty if skipped). Everything else goes to stderr so it
+    # doesn't get captured by the caller's command substitution.
+    local templates=()
+    for f in "$TEMPLATES_DIR"/*.tsv; do
+        [[ -f "$f" ]] && templates+=("$(basename "$f" .tsv)")
+    done
+
+    if [[ ${#templates[@]} -eq 0 ]]; then
+        echo "No catalog templates found — skipping catalog setup for this device." >&2
+        return
+    fi
+
+    echo "Catalog templates available:" >&2
+    local i=1
+    for t in "${templates[@]}"; do
+        echo "  $i) $t" >&2
+        ((i++))
+    done
+    echo "  0) none / skip for now" >&2
+
+    local choice
+    read -r -p "Pick a template [1]: " choice
+    choice="${choice:-1}"
+
+    if [[ "$choice" == "0" ]]; then
+        return
+    fi
+    if ! [[ "$choice" =~ ^[0-9]+$ ]] || [[ "$choice" -lt 1 ]] || [[ "$choice" -gt ${#templates[@]} ]]; then
+        echo "Not a valid choice, skipping catalog setup for this device." >&2
+        return
+    fi
+
+    echo "${templates[$((choice - 1))]}"
 }
 
 cmd_init() {
     command -v adb >/dev/null 2>&1 || { echo "adb not found in PATH."; exit 1; }
-    [[ -f "$DEVICES_FILE" ]] || printf "label\tserial\tmodel\tnote\n" > "$DEVICES_FILE"
+    [[ -f "$DEVICES_FILE" ]] || printf "label\tserial\tmodel\tcatalog\n" > "$DEVICES_FILE"
+    mkdir -p "$CATALOGS_DIR"
 
     local connected
     connected="$(list_connected)"
@@ -42,12 +104,9 @@ cmd_init() {
         exit 1
     fi
 
-    # Use an array + for-loop rather than `while read <<<`, since the
-    # latter binds stdin to the device list for the loop's duration —
-    # which then gets consumed by the interactive `read -p` below
-    # instead of the terminal, silently corrupting both. (Same class of
-    # bug as `adb shell` swallowing a stdin-fed command list elsewhere
-    # in this project.)
+    # Array + for-loop, not `while read <<<`: the latter binds stdin to
+    # the device list for the loop's duration, which then gets consumed
+    # by the interactive `read -p` calls below instead of the terminal.
     local serials=()
     while IFS= read -r line; do
         [[ -n "$line" ]] && serials+=("$line")
@@ -68,13 +127,20 @@ cmd_init() {
         read -r -p "Label for this device [$default_label]: " label
         label="${label:-$default_label}"
 
-        # avoid duplicate labels
         if awk -F'\t' -v l="$label" 'NR>1 && $1==l{f=1} END{exit !f}' "$DEVICES_FILE"; then
             echo "Label '$label' is already used by another serial — pick another, run again."
             continue
         fi
 
-        printf "%s\t%s\t%s\t%s\n" "$label" "$serial" "$model" "" >> "$DEVICES_FILE"
+        local template catalog=""
+        template="$(pick_template)"
+        if [[ -n "$template" ]]; then
+            catalog="catalogs/${label}.tsv"
+            cp "$TEMPLATES_DIR/${template}.tsv" "$CATALOGS_DIR/${label}.tsv"
+            echo "Seeded $catalog from template '$template' — edit it freely, it's this device's own copy."
+        fi
+
+        printf "%s\t%s\t%s\t%s\n" "$label" "$serial" "$model" "$catalog" >> "$DEVICES_FILE"
         echo "Saved: $label -> $serial"
     done
 
@@ -87,8 +153,8 @@ cmd_list() {
         echo "No devices saved yet. Run: $0 init"
         return
     fi
-    printf "%-15s %-22s %s\n" "LABEL" "SERIAL" "MODEL"
-    awk -F'\t' 'NR>1{printf "%-15s %-22s %s\n",$1,$2,$3}' "$DEVICES_FILE"
+    printf "%-15s %-22s %-16s %s\n" "LABEL" "SERIAL" "MODEL" "CATALOG"
+    awk -F'\t' 'NR>1{printf "%-15s %-22s %-16s %s\n",$1,$2,$3,$4}' "$DEVICES_FILE"
 }
 
 cmd_forget() {
@@ -97,7 +163,7 @@ cmd_forget() {
     [[ -f "$DEVICES_FILE" ]] || { echo "No devices saved yet."; exit 1; }
     tmp="$(mktemp)"
     awk -F'\t' -v l="$label" 'NR==1 || $1!=l' "$DEVICES_FILE" > "$tmp" && mv "$tmp" "$DEVICES_FILE"
-    echo "Forgot '$label' (if it existed)."
+    echo "Forgot '$label' (if it existed). Its catalogs/$label.tsv, if any, was left in place — delete manually if you don't want it."
 }
 
 CMD="${1:-}"
@@ -106,5 +172,6 @@ case "$CMD" in
     init) cmd_init "$@" ;;
     list) cmd_list "$@" ;;
     forget) cmd_forget "$@" ;;
+    templates) cmd_templates "$@" ;;
     *) usage; exit 1 ;;
 esac

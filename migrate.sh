@@ -21,7 +21,7 @@
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/../lib/resolve_device.sh"
+source "$SCRIPT_DIR/lib/resolve_device.sh"
 
 STATE_DIR="${MIGRATION_STATE_DIR:-./migration_state}"
 APK_DIR="$STATE_DIR/apk_transfer"
