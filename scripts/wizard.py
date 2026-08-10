@@ -12,9 +12,14 @@ yes from you first (dry-run before real debloat, selectable package
 list before pulling/installing anything).
 """
 import csv
+import json
 import os
+import re
 import subprocess
 import sys
+import urllib.error
+import urllib.request
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -120,6 +125,85 @@ def run(cmd, check=False, capture=False):
     if check and result.returncode != 0:
         raise RuntimeError(f"Command failed ({result.returncode}): {' '.join(cmd)}")
     return result
+
+
+# --------------------------------------------------------------------
+# app-name enrichment (Python port of migrate.sh's fetch_app_name /
+# extract_og_title — same fallback order: Play Store -> RuStore ->
+# F-Droid API) used by the layout-plan step. Kept separate from
+# migrate.sh's bash version rather than shelling out to it, since this
+# runs concurrently over the whole installed-package list rather than
+# migrate.sh's one-at-a-time migration_config.txt rows.
+# --------------------------------------------------------------------
+
+_OG_TITLE_TAG_RE = re.compile(r'<meta[^>]*property="og:title"[^>]*>')
+_CONTENT_ATTR_RE = re.compile(r'content="([^"]*)"')
+_UA_HEADERS = {"User-Agent": "Mozilla/5.0"}
+
+
+def _extract_og_title(html):
+    tag = _OG_TITLE_TAG_RE.search(html)
+    if not tag:
+        return ""
+    content = _CONTENT_ATTR_RE.search(tag.group(0))
+    return content.group(1) if content else ""
+
+
+def _fetch_url_text(url, headers=None, timeout=8):
+    try:
+        req = urllib.request.Request(url, headers=headers or {})
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return resp.read().decode("utf-8", errors="ignore")
+    except (urllib.error.URLError, TimeoutError, OSError):
+        return ""
+
+
+def fetch_app_name(pkg):
+    """Real app name for pkg, or "" if not found anywhere. Same fallback
+    chain as migrate.sh: Google Play web listing, then RuStore, then
+    F-Droid's JSON API for FOSS apps not on either store."""
+    html = _fetch_url_text(
+        f"https://play.google.com/store/apps/details?id={pkg}&hl=en", _UA_HEADERS)
+    name = _extract_og_title(html)
+    if name:
+        return name
+
+    html = _fetch_url_text(f"https://www.rustore.ru/catalog/app/{pkg}", _UA_HEADERS)
+    name = _extract_og_title(html)
+    if name:
+        return name
+
+    text = _fetch_url_text(f"https://f-droid.org/api/v1/packages/{pkg}")
+    if text:
+        try:
+            data = json.loads(text)
+            loc = data.get("localized", {})
+            en = loc.get("en-US") or (next(iter(loc.values())) if loc else {})
+            return en.get("name", "")
+        except (ValueError, StopIteration):
+            pass
+    return ""
+
+
+def fetch_app_names(pkgs, workers=8, progress=True):
+    """Concurrently resolve real names for a list of packages. Returns
+    {pkg: name_or_empty_string}. Prints a running counter to stderr-ish
+    (via say) since this can take a couple of minutes over 100+ apps."""
+    results = {}
+    total = len(pkgs)
+    done = 0
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        futures = {pool.submit(fetch_app_name, p): p for p in pkgs}
+        for fut in as_completed(futures):
+            pkg = futures[fut]
+            try:
+                results[pkg] = fut.result()
+            except Exception:
+                results[pkg] = ""
+            done += 1
+            if progress and (done % 10 == 0 or done == total):
+                say(f"  looked up {done}/{total} app names...")
+    return results
 
 
 # --------------------------------------------------------------------
@@ -497,22 +581,53 @@ def step_layout_plan(dest_serial):
     ).stdout
     pkgs = sorted(l.replace("package:", "").strip() for l in installed.splitlines() if l.strip())
 
+    names = {}
+    if pkgs and ask_yes_no(
+            f"\nLook up real app names for all {len(pkgs)} apps (Play Store/RuStore/"
+            f"F-Droid, needs internet, takes a couple minutes)?", default=True):
+        say(f"Looking up {len(pkgs)} app names...")
+        names = fetch_app_names(pkgs)
+
+    def label(pkg):
+        name = names.get(pkg, "")
+        return f"{pkg} — {name}" if name else pkg
+
+    # Lawnchair's home screen is Page > Blob (a folder is a "blob" of
+    # grouped items) > Item. We can't know your actual grid size or
+    # real categories from here, so this is a starting scaffold, not a
+    # real plan: apps sorted by resolved name (falls back to package
+    # id) and chunked into blobs of BLOB_SIZE, BLOBS_PER_PAGE per page.
+    # Cut/paste items between blobs/pages freely — see the file's own
+    # header for the full disclaimer.
+    BLOB_SIZE = 8
+    BLOBS_PER_PAGE = 5
+    ordered = sorted(pkgs, key=lambda p: (names.get(p) or p).lower())
+    blobs = [ordered[i:i + BLOB_SIZE] for i in range(0, len(ordered), BLOB_SIZE)]
+
     plan_path = MIGRATION_STATE / f"{dest_serial}_layout_plan.md"
     plan_path.parent.mkdir(parents=True, exist_ok=True)
     lines = [
         f"# Home screen layout plan — {dest_serial}",
         "",
-        "Edit this however you like: group apps under headings as folders, reorder for",
-        "page order, delete apps you don't want on the home screen (they stay in the app",
-        "drawer regardless). This file is just a planning aid — nothing reads it back",
-        "automatically, since actual icon placement can't be scripted without root (see",
-        "README). Use it as your reference while arranging things by hand in Lawnchair.",
-        "",
-        "## Unsorted",
+        "Structure: Page > Blob > Item, matching Lawnchair (a \"blob\" here is a folder —",
+        "a group of items that collapses to one icon on the page). Rename/merge/split",
+        "blobs, move items between them, reorder pages, delete anything you don't want",
+        "on the home screen (it stays in the app drawer regardless) — this file is just",
+        "a planning aid, nothing reads it back automatically, since actual icon",
+        "placement can't be scripted without root (see README). The grouping below is",
+        "an alphabetical starting scaffold, not real categories — reorganize freely.",
         "",
     ]
-    lines += [f"- {p}" for p in pkgs]
-    plan_path.write_text("\n".join(lines) + "\n")
+    for page_num, page_start in enumerate(range(0, len(blobs), BLOBS_PER_PAGE), start=1):
+        page_blobs = blobs[page_start:page_start + BLOBS_PER_PAGE]
+        lines.append(f"## Page {page_num}")
+        lines.append("")
+        for blob_num, blob_items in enumerate(page_blobs, start=1):
+            lines.append(f"### Blob {page_start // BLOB_SIZE + blob_num}")
+            lines.append("")
+            lines += [f"- {label(p)}" for p in blob_items]
+            lines.append("")
+    plan_path.write_text("\n".join(lines).rstrip() + "\n")
 
     say(f"Wrote {plan_path.relative_to(REPO_ROOT)}")
     input("Edit it now if you like, then press Enter to continue...")
