@@ -273,9 +273,9 @@ def resolve_serial(serial, role, exclude_serial=None):
 # --------------------------------------------------------------------
 
 def step_pick_source_dest():
-    header("1/8 — Pick source and destination devices")
-    say("Source = the OLD phone you're migrating apps FROM.")
+    header("1/8 — Pick destination device")
     say("Destination = the NEW phone you're setting up (this is also what gets debloated).")
+    say("Source = the OLD phone you'd migrate apps FROM — only needed if you want that.")
     say("Devices are identified by their ADB serial — no need to name them.")
     say()
 
@@ -294,17 +294,23 @@ def step_pick_source_dest():
     upsert_device(dest_serial, dest_serial, dest_model, role="new")
     say(f"Destination: {dest_model} ({dest_serial})")
 
-    remaining = [(s, m) for s, m in devices if s != dest_serial]
-    if remaining:
-        src_serial, src_model = pick_device("Which device is the SOURCE (old phone)?",
-                                             exclude_serial=dest_serial)
-        upsert_device(src_serial, src_serial, src_model, role="old")
-    else:
-        say("Source phone not connected yet — that's fine, we'll detect it automatically")
-        say("the moment it's needed: just plug it in when prompted.")
-        src_serial = None
+    say()
+    want_migrate = ask_yes_no(
+        "Also migrate apps over from an old (source) device? (No if you're just "
+        "debloating this phone.)", default=True)
 
-    return {"dest_serial": dest_serial, "src_serial": src_serial}
+    src_serial = None
+    if want_migrate:
+        remaining = [(s, m) for s, m in devices if s != dest_serial]
+        if remaining:
+            src_serial, src_model = pick_device("Which device is the SOURCE (old phone)?",
+                                                 exclude_serial=dest_serial)
+            upsert_device(src_serial, src_serial, src_model, role="old")
+        else:
+            say("Source phone not connected yet — that's fine, we'll detect it automatically")
+            say("the moment it's needed: just plug it in when prompted.")
+
+    return {"dest_serial": dest_serial, "src_serial": src_serial, "want_migrate": want_migrate}
 
 
 def step_pick_template(dest_serial):
@@ -349,9 +355,10 @@ def step_debloat(dest_serial):
         say("Skipped — nothing changed on the device.")
 
 
-def step_migrate(src_serial, dest_serial):
+def step_migrate(src_serial, dest_serial, want_migrate):
     header("5/8 — Port apps from the old device?")
-    if not ask_yes_no("Migrate apps from the source device to the destination device?", default=True):
+    if not want_migrate:
+        say("Skipping — you said this run is debloat-only, no old device to port from.")
         return
 
     MIGRATION_STATE.mkdir(parents=True, exist_ok=True)
@@ -529,7 +536,7 @@ def main():
     ctx = step_pick_source_dest()
     step_pick_template(ctx["dest_serial"])
     step_debloat(ctx["dest_serial"])
-    step_migrate(ctx["src_serial"], ctx["dest_serial"])
+    step_migrate(ctx["src_serial"], ctx["dest_serial"], ctx["want_migrate"])
     step_lawnchair(ctx["dest_serial"])
     step_layout_plan(ctx["dest_serial"])
 

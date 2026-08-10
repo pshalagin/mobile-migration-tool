@@ -17,10 +17,10 @@ Both drive the exact same scripts under `scripts/`, so you can mix and match —
 
 Requires `python3` (the wizard logic lives in `scripts/wizard.py`). Devices are identified by their ADB serial — nothing to name. Walks through, in order:
 
-1. Pick source (old) and destination (new) device from currently connected ADB devices. If the source isn't connected yet, that's fine — every later step that needs it just prompts you to plug it in when it's actually needed, and auto-detects which device it is. Works the same whether both phones are connected at once or one at a time.
+1. Pick the destination (new) device from currently connected ADB devices, then asks whether you're also migrating apps from an old device — say no here if this run is debloat-only and the rest of the flow skips the source device entirely. If yes and the source isn't connected yet, that's fine — the migration step just prompts you to plug it in when it's actually needed, and auto-detects which device it is. Works the same whether both phones are connected at once or one at a time.
 2. Pick a debloat catalog template for the destination device (seeds `state/catalogs/<serial>.tsv`, or reuses an existing one).
 3. Dry-run debloat (`status`), then asks before applying for real.
-4. Optionally port apps from the old device: scans both devices, plans the diff, optionally enriches app names from public store listings, then shows a selectable checklist to mark what to port before pulling/installing.
+4. If you opted into migration: port apps from the old device — scans both devices, plans the diff, optionally enriches app names from public store listings, then shows a selectable checklist to mark what to port before pulling/installing.
 5. Optionally sets up Lawnchair as the home launcher.
 6. Optionally drafts a home-screen layout plan (`state/migration/<serial>_layout_plan.md`) for you to edit, then walks you through applying it for real in Lawnchair (arranging icons is manual — no API for that without root — but the wizard points you at Lawnchair's own Settings > Backup > Export so you don't have to redo it after a factory reset).
 
