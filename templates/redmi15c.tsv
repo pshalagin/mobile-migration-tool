@@ -15,7 +15,7 @@ com.bitdefender.security	absent	bloat	Bitdefender trial
 com.block.juggle	absent	game	preinstalled game
 com.block.puzzle.game.hippo.mi	absent	game	preinstalled game
 com.blurb.checkout	absent	bloat	Blurb
-com.booking	absent	bloat	Booking.com
+com.booking	optional	bloat	Booking.com — kept, fine to have per user preference
 com.cnn.mobile.android.phone.edgepanel	absent	bloat	CNN
 com.crazy.juicer.xm	absent	game	preinstalled game
 com.duokan.phone.remotecontroller	absent	bloat	Mi Remote
@@ -45,7 +45,7 @@ com.google.audio.hearing.visualization.accessibility.scribe	absent	bloat	Live Tr
 com.imdb.mobile	absent	bloat	IMDb
 com.infraware.polarisoffice5	absent	bloat	Polaris Office
 com.jewelsblast.ivygames.Adventure.free	absent	game	preinstalled game (note: capital A in package name on this build)
-com.lemon.lvoverseas	absent	bloat	CapCut
+com.lemon.lvoverseas	optional	bloat	CapCut — kept, fine to have per user preference
 com.linkedin.android	absent	bloat	LinkedIn
 com.mi.global.pocobbs	absent	bloat	POCO forum
 com.mi.global.pocostore	absent	bloat	POCO store
@@ -152,7 +152,7 @@ com.android.bluetoothmidiservice	absent	bloat	BT MIDI passthrough for music gear
 com.android.htmlviewer	absent	bloat	legacy HTML viewer
 com.android.egg	absent	bloat	Easter egg, cosmetic only
 com.android.dreams.basic	absent	bloat	basic screensaver
-com.android.soundrecorder	absent	bloat	voice recorder — the ONLY recorder on this build, protected on this build so reconciler auto-falls-back to disable; re-enable if you need voice memos
+com.android.soundrecorder	keep	utility	the ONLY sound recorder on this build — kept per user preference, not just tolerated
 com.mi.appfinder	absent	bloat	redundant with launcher search
 com.miui.phrase	absent	bloat	quick-phrase text snippet helper
 com.miui.guardprovider	absent	bloat	legacy multi-engine antivirus provider
@@ -168,8 +168,8 @@ com.ordinaryjoy.woodblast	absent	game	preinstalled game
 com.wdstechnology.android.kryten	absent	game	preinstalled bloat game/app
 com.mediatek.duraspeed	absent	bloat	MTK background-killer, conflicts with MIUI PowerKeeper
 com.xiaomi.glgm	absent	bloat	Xiaomi Game Center plugin
-com.google.android.as	disabled	optional-feature	Android System Intelligence — Live Caption/Now Playing/Smart Reply. Full removal loses real features; disable instead.
-com.miui.gallery	disabled	optional-feature	your actual photo viewer unless you fully rely on Google Photos; disable rather than remove.
+com.google.android.as	optional	optional-feature	Android System Intelligence — Live Caption/Now Playing/Smart Reply. Kept enabled per user preference.
+com.miui.gallery	optional	optional-feature	your actual photo viewer unless you fully rely on Google Photos. Kept enabled per user preference.
 com.google.android.gm	keep	google-account	Gmail — kept installed, just don't sign into main Google account
 com.android.vending	keep	google-account	Play Store — kept installed as fallback alongside RuStore, stay signed out
 com.xiaomi.simactivate.service	optional	carrier-region	eSIM/region activation; needed if you ever reactivate a region/eSIM
