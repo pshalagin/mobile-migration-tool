@@ -288,7 +288,19 @@ cmd_install() {
     local serial
     serial="$(resolve_device_for_role "${1:-}" new)" || exit 1
 
-    local installed=0 failed=0 missing=0
+    # Single adb install-multi-package call for the whole batch, instead
+    # of a separate `adb install` per package. Two reasons: it's faster,
+    # and on devices where the OEM install-confirmation popup has a
+    # "remember my choice" option (e.g. HyperOS's AdbInstallActivity),
+    # that choice only sticks within one adb session — looping N
+    # separate installs meant it re-prompted every single time.
+    #
+    # Trade-off: install-multi-package is atomic. If ANY package in the
+    # batch fails (bad signature, missing split, whatever), NONE of them
+    # get installed — there's no partial-success case like the old
+    # per-package loop had. If a batch fails, mark the offending
+    # package(s) SKIP in the config file and re-run for the rest.
+    local pkgs=() apk_files=() missing=0
 
     while IFS= read -r line; do
         [[ -z "$line" || "$line" == \#* ]] && continue
@@ -303,25 +315,38 @@ cmd_install() {
             continue
         fi
 
-        printf "Installing %-50s ... " "$pkg"
-        apk_count=$(ls "$pkg_dir"/*.apk 2>/dev/null | wc -l | tr -d ' ')
-        if [[ "$apk_count" -gt 1 ]]; then
-            out="$(adb -s "$serial" install-multiple "$pkg_dir"/*.apk 2>&1)"
-        else
-            out="$(adb -s "$serial" install "$pkg_dir"/*.apk 2>&1)"
-        fi
-
-        if echo "$out" | grep -qi "Success"; then
-            echo "OK"
-            ((installed++))
-        else
-            echo "FAILED (${out})"
-            ((failed++))
-        fi
+        pkgs+=("$pkg")
+        while IFS= read -r -d '' f; do
+            apk_files+=("$f")
+        done < <(find "$pkg_dir" -name '*.apk' -print0)
     done < "$CONFIG_FILE"
 
+    if [[ ${#apk_files[@]} -eq 0 ]]; then
+        echo "Nothing to install — no pulled APKs found for any PORT-marked package."
+        echo "Skipped (no APK): $missing"
+        exit 0
+    fi
+
+    echo "Installing ${#pkgs[@]} package(s) in a single batch (${#apk_files[@]} APK file(s) total):"
+    printf '  - %s\n' "${pkgs[@]}"
     echo
-    echo "Installed: $installed, Failed: $failed, Skipped (no APK): $missing"
+    echo "This should trigger ONE install-confirmation prompt on the device (check"
+    echo "'remember my choice' there if offered) rather than one per app."
+    echo
+
+    out="$(adb -s "$serial" install-multi-package -r "${apk_files[@]}" 2>&1)"
+    echo "$out"
+    echo
+
+    if echo "$out" | grep -qi "Success" && ! echo "$out" | grep -qi "Failure"; then
+        echo "Batch install OK — ${#pkgs[@]} package(s) installed, $missing skipped (no APK)."
+    else
+        echo "Batch install FAILED — 0 of ${#pkgs[@]} package(s) installed (all-or-nothing),"
+        echo "$missing skipped (no APK). See the adb output above for which package caused"
+        echo "it, mark that one SKIP in $CONFIG_FILE, then re-run: $0 install $serial"
+    fi
+
+    echo
     echo "Note: apps that check their installer source (banking, some messengers)"
     echo "may still refuse to run or nag about reinstalling from an official store."
 }
