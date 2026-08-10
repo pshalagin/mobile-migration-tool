@@ -27,44 +27,43 @@
 # as you want; already-satisfied rows are no-ops.
 #
 # Usage:
-#   ./debloat.sh status <serial>     Compare packages.tsv vs device, no changes
-#   ./debloat.sh apply <serial>      Reconcile device to match packages.tsv
-#   ./debloat.sh list [state]        Print the catalog (optionally filtered), no device needed
+#   ./debloat.sh status [serial-or-label]   Compare packages.tsv vs device, no changes
+#   ./debloat.sh apply  [serial-or-label]   Reconcile device to match packages.tsv
+#   ./debloat.sh list   [state]             Print the catalog (optionally filtered), no device needed
+#
+# The device arg is optional if exactly one ADB device is connected.
+# For labels instead of typing raw serials, run ./devices.sh init once
+# from the repo root (see lib/resolve_device.sh).
 #
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DB_FILE="${DEBLOAT_DB:-$SCRIPT_DIR/packages.tsv}"
+source "$SCRIPT_DIR/../lib/resolve_device.sh"
 
 usage() {
     cat <<EOF
 Usage: $0 <command> [args]
 
 Commands:
-  status <serial>   Dry-run: compare packages.tsv against the device,
-                    report drift per package, change nothing.
-  apply <serial>    Reconcile the device to match packages.tsv.
+  status [serial-or-label]   Dry-run: compare packages.tsv against the
+                    device, report drift per package, change nothing.
+                    Device arg optional if only one is connected.
+  apply  [serial-or-label]   Reconcile the device to match packages.tsv.
                     Idempotent — safe to re-run any time.
-  list [state]      Print the catalog. Optionally filter by state
+  list   [state]    Print the catalog. Optionally filter by state
                     (absent|disabled|keep|optional). No device needed.
 
 Env:
   DEBLOAT_DB   Override the catalog file (default: $DB_FILE)
+
+Tip: run ../devices.sh init once to label your device(s), then pass
+the label instead of hunting down the serial each time.
 EOF
 }
 
 require_adb() {
     command -v adb >/dev/null 2>&1 || { echo "adb not found in PATH."; exit 1; }
-}
-
-require_device() {
-    local serial="$1"
-    if ! adb devices | grep -w "$serial" | grep -qw "device"; then
-        echo "Serial not found/authorized: $serial"
-        echo "Connected devices:"
-        adb devices
-        exit 1
-    fi
 }
 
 require_db() {
@@ -98,9 +97,9 @@ cmd_list() {
 }
 
 cmd_status() {
-    local serial="${1:-}"
-    [[ -z "$serial" ]] && { echo "Usage: $0 status <serial>"; exit 1; }
-    require_db; require_adb; require_device "$serial"
+    require_db; require_adb
+    local serial
+    serial="$(resolve_device "${1:-}")" || exit 1
 
     echo "Snapshotting device ($serial)..."
     snapshot_device "$serial"
@@ -155,9 +154,9 @@ cmd_status() {
 }
 
 cmd_apply() {
-    local serial="${1:-}"
-    [[ -z "$serial" ]] && { echo "Usage: $0 apply <serial>"; exit 1; }
-    require_db; require_adb; require_device "$serial"
+    require_db; require_adb
+    local serial
+    serial="$(resolve_device "${1:-}")" || exit 1
 
     echo "Snapshotting device ($serial)..."
     snapshot_device "$serial"
