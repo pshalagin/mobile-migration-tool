@@ -17,10 +17,14 @@
 #                whether uninstall would work. Use this for apps you
 #                want off but explicitly want kept recoverable (e.g.
 #                a feature you might want back later).
-#   keep      -> must stay present & enabled. No action taken, but
-#                `status`/`apply` will WARN you if one of these is
-#                found missing on the device — drift detection for
-#                things you can't afford to lose.
+#   keep      -> must stay present & enabled. `status` only reports
+#                drift (dry run, no changes). `apply` actively tries
+#                to restore it: `pm enable` if it's just disabled,
+#                `pm install-existing` if it's missing entirely. If
+#                install-existing fails, the package is gone from the
+#                system partition and can't be auto-restored — that
+#                still gets flagged as a warning instead of silently
+#                failing.
 #   optional  -> present by default, no action taken. These are
 #                feature-dependent apps where there's no universally
 #                right answer — edit the catalog yourself and flip
@@ -197,7 +201,7 @@ cmd_apply() {
     snapshot_device "$serial"
     echo
 
-    local removed=0 disabled=0 already_ok=0 fallback=0 warned=0 failed=0
+    local removed=0 disabled=0 already_ok=0 fallback=0 restored=0 warned=0 failed=0
 
     while IFS=$'\t' read -r pkg state category note; do
         [[ "$pkg" == "package" ]] && continue
@@ -247,9 +251,24 @@ cmd_apply() {
             keep)
                 if pkg_installed "$pkg" && ! pkg_disabled "$pkg"; then
                     ((already_ok++))
+                elif pkg_installed "$pkg" && pkg_disabled "$pkg"; then
+                    printf "Restoring (enable) %-50s ... " "$pkg"
+                    out="$(adb -s "$serial" shell pm enable --user 0 "$pkg" 2>&1 < /dev/null)"
+                    if echo "$out" | grep -qiE "new state: enabled"; then
+                        echo "OK"; ((restored++))
+                    else
+                        echo "FAILED (${out}) — $note"
+                        ((warned++))
+                    fi
                 else
-                    echo "WARNING: critical package '$pkg' is missing/disabled — $note"
-                    ((warned++))
+                    printf "Restoring (install-existing) %-50s ... " "$pkg"
+                    out="$(adb -s "$serial" shell pm install-existing --user 0 "$pkg" 2>&1 < /dev/null)"
+                    if echo "$out" | grep -qi "installed for user"; then
+                        echo "OK"; ((restored++))
+                    else
+                        echo "FAILED (not on system partition, can't auto-restore: ${out}) — $note"
+                        ((warned++))
+                    fi
                 fi
                 ;;
 
@@ -263,12 +282,14 @@ cmd_apply() {
     echo "Removed this run:        $removed"
     echo "Disabled this run:       $disabled"
     echo "Fell back to disable:    $fallback  (uninstall blocked by OS, disabled instead)"
+    echo "Restored this run:       $restored  (keep-state packages that were missing/disabled)"
     echo "Already in desired state: $already_ok"
-    echo "Critical package warnings: $warned"
+    echo "Critical package warnings: $warned  (keep-state, couldn't auto-restore — see FAILED lines above)"
     echo "Genuine failures:         $failed"
     echo
-    echo "To restore anything: adb shell pm install-existing --user 0 <package>"
-    echo "                  or: adb shell pm enable --user 0 <package>"
+    echo "Packages warned above are usually gone from the system partition entirely"
+    echo "(pm install-existing can only restore what's still there) — reinstalling"
+    echo "those needs a real APK or a factory-image extraction."
 }
 
 CMD="${1:-}"
