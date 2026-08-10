@@ -74,6 +74,38 @@ Compares installed apps between an old and new device and proposes (or executes)
 ./run.sh migrate install [new_serial]
 ```
 
+## Scripting the Lawnchair layout (no root, no manual dragging)
+
+`.lawnchairbackup` files are just zips — a sqlite `favorites` table (the
+actual layout: container/screen/cellX/cellY/itemType/intent) plus a few
+settings files. `scripts/build_layout_backup.py` builds one directly from
+an edited `layout_plan.md`, so you don't have to drag 200 apps into folders
+by hand:
+
+```
+# one-time: export a real backup so we have a template for the non-layout
+# files and the exact schema — Lawnchair > Settings > Backup > Export,
+# then adb pull it (or just move the file) into state/migration/
+
+python3 scripts/build_layout_backup.py \
+    --plan state/migration/<serial>_layout_plan.md \
+    --reference "state/migration/<your exported backup>.lawnchairbackup" \
+    --serial <serial> \
+    --out state/migration/<serial>_generated.lawnchairbackup
+
+adb -s <serial> push state/migration/<serial>_generated.lawnchairbackup /sdcard/Download/
+# on the phone: Lawnchair > Settings > Backup > Restore > pick the file > Layout and settings
+```
+
+Page 1's leading bullet list becomes the hotseat/dock; every other `## Page`
+becomes a workspace screen; each `### Blob:` with 2+ items becomes a folder
+(single-item blobs become a plain icon). `--serial` lets it resolve each
+app's actual launcher Activity via adb for a clean, pre-resolved icon
+(cached in `state/app_launch_activity.tsv`); without it, items still work,
+just via a package-only intent Android resolves at tap time. `--cols`/
+`--rows` (default 5x6) control grid capacity per page — it'll warn if a page
+has more folders than fit, rather than silently overlapping icons.
+
 ## Layout
 
 ```
@@ -83,6 +115,7 @@ scripts/
   devices.sh                      device label/role registry + catalog template picker
   debloat.sh                      declarative debloat reconciler
   migrate.sh                      multipass app migration
+  build_layout_backup.py          scripts a .lawnchairbackup from layout_plan.md (no root)
   lib/resolve_device.sh           shared device/catalog resolution, sourced by the above
 templates/*.tsv                 debloat catalog templates, one per device model (versioned)
 state/                          ALL generated/local files live here — gitignored, per-machine
