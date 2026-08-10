@@ -149,7 +149,7 @@ com.xiaomi.mtb	absent	factory-test	hidden baseband/modem debug tool (low confide
 com.android.apps.tag	absent	bloat	NFC tag reader/writer, redundant
 com.android.avatarpicker	absent	bloat	cosmetic contact-avatar picker
 com.android.bluetoothmidiservice	absent	bloat	BT MIDI passthrough for music gear
-com.android.htmlviewer	absent	bloat	legacy HTML viewer
+com.android.htmlviewer	keep	hardware-critical	NOT a legacy HTML viewer on this build — repurposed by Xiaomi to host com.android.settings.cloud.CloudSettingsProvider, which com.android.wm.shell's MiuiMultiWindowRecommendHelper depends on during SystemUI init. Removing it caused a SystemUI crash/restart loop (visible as screen flickering) every boot until HyperOS silently restored it. Confirmed via `adb shell dumpsys package providers | grep CloudSettings`.
 com.android.egg	absent	bloat	Easter egg, cosmetic only
 com.android.dreams.basic	absent	bloat	basic screensaver
 com.android.soundrecorder	keep	utility	the ONLY sound recorder on this build — kept per user preference, not just tolerated
