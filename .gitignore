@@ -1,0 +1,8 @@
+# Personal/local state — device labels, serials, per-device catalog
+# copies, and migration working files. Not shared across machines/repos.
+devices.tsv
+catalogs/
+migration_state/
+migration_config.txt
+__pycache__/
+*.pyc
