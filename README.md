@@ -74,8 +74,6 @@ Compares installed apps between an old and new device and proposes (or executes)
 ./run.sh migrate install [new_serial]
 ```
 
-`install` installs every `PORT`-marked package in a single `adb install-multi-package` call rather than one `adb install` per app — fewer/faster installs, and on OEMs whose install-confirmation popup has a "remember my choice" option (e.g. HyperOS), it only needs to be answered once per batch instead of once per app. The trade-off is atomicity: if any one package in the batch fails, none of them get installed. If a batch fails, the adb output says which package caused it — mark that one `SKIP` in `state/migration/migration_config.txt` and re-run `install` for the rest.
-
 ## Layout
 
 ```
