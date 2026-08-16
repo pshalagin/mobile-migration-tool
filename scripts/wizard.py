@@ -168,7 +168,7 @@ def _fetch_url_text(url, headers=None, timeout=8):
 def read_app_info_cache():
     if not APP_INFO_FILE.exists():
         return {}
-    with open(APP_INFO_FILE, newline="") as f:
+    with open(APP_INFO_FILE, newline="", encoding="utf-8-sig") as f:
         return {r["package"]: r for r in csv.DictReader(f, delimiter="\t")}
 
 

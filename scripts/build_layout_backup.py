@@ -107,7 +107,10 @@ BULLET_RE = re.compile(r"^-\s+(\S+)")
 # --------------------------------------------------------------------
 
 def parse_layout_tsv(path):
-    with open(path, newline="") as f:
+    # utf-8-sig transparently strips a BOM if present (common after
+    # editing in Excel/Numbers) and behaves like plain utf-8 otherwise —
+    # handles both cases without needing to know which was used.
+    with open(path, newline="", encoding="utf-8-sig") as f:
         rows = list(csv.DictReader(f, delimiter="\t"))
 
     def sort_key(i_r):
@@ -228,7 +231,7 @@ def parse_plan_markdown(path):
 def load_app_names():
     if not APP_INFO_FILE.exists():
         return {}
-    with open(APP_INFO_FILE, newline="") as f:
+    with open(APP_INFO_FILE, newline="", encoding="utf-8-sig") as f:
         return {r["package"]: r.get("name", "") for r in csv.DictReader(f, delimiter="\t")}
 
 
@@ -239,7 +242,7 @@ def load_app_names():
 def load_launch_activity_cache():
     if not LAUNCH_ACTIVITY_FILE.exists():
         return {}
-    with open(LAUNCH_ACTIVITY_FILE, newline="") as f:
+    with open(LAUNCH_ACTIVITY_FILE, newline="", encoding="utf-8-sig") as f:
         return {r["package"]: r["activity"] for r in csv.DictReader(f, delimiter="\t") if r.get("activity")}
 
 
