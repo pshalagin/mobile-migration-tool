@@ -14,10 +14,10 @@ dock	LLM Assistants	2			com.anthropic.claude
 dock	LLM Assistants	3			com.deepseek.chat		
 dock	LLM Assistants	4			com.google.android.apps.bard		Gemini
 1	Payment	1	4	4	com.google.android.apps.walletnfcrel		
-1	Finance	1			com.mobile.bitkogan		
-1	Finance	2			com.tradingview.tradingviewapp		
-1	Finance	3			com.coinmarketcap.android		
-1	Finance	4			com.yahoo.mobile.client.android.finance		
+2	Finance	1			com.mobile.bitkogan		
+2	Finance	2			com.tradingview.tradingviewapp		
+2	Finance	3			com.coinmarketcap.android		
+2	Finance	4			com.yahoo.mobile.client.android.finance		
 1	Productivity & Docs	1	2	1	com.google.android.apps.docs.editors.sheets		
 1	Productivity & Docs	2			com.google.android.apps.docs.editors.slides		
 1	Productivity & Docs	3			com.google.android.keep		
@@ -59,8 +59,8 @@ dock	LLM Assistants	4			com.google.android.apps.bard		Gemini
 1	Health & Fitness	9			com.intvl.app		INTVL
 1	Health & Fitness	10			ru.rhr		Running Heroes Russia
 1	Health & Fitness	11			tech.aml.moneyrun		Moneyrun - moved here from Games, it's a running/fitness app
-1	Medicine	1			com.invitro.app		
-1	Medicine	2			com.kdfapp.prod		unidentified - no match found via search either
+2	Medicine	1			com.invitro.app		
+2	Medicine	2			com.kdfapp.prod		unidentified - no match found via search either
 1	Maps	1	1	2	com.outdooractive.Outdooractive		Outdooractive - moved here from Travel, groups with Garmin Explore per your outdoor/hiking bucket
 1	Maps	2			team.nineone.openloop_app.stage		
 1	Maps	3			com.google.android.apps.mapslite		
@@ -123,11 +123,11 @@ dock	LLM Assistants	4			com.google.android.apps.bard		Gemini
 2	Business	3			ru.tinkoff.sme		Tinkoff for business
 2	Insurance	1	4	0	ru.reso.osago		
 2	Insurance	2			ru.alfastrah.app		
-2	Pay RU	1			ru.nspk.mir.loyalty		
-2	Pay RU	2			ru.nspk.mirpay		
-2	Pay RU	3			ru.nspk.sbpay		
-2	Pay RU	4			ru.yoo.money		YooMoney
-2	Pay RU	5			ru.mw		
+1	Payment	2			ru.nspk.mir.loyalty		
+1	Payment	3			ru.nspk.mirpay		
+1	Payment	4			ru.nspk.sbpay		
+2	Wallets	1			ru.yoo.money		YooMoney
+2	Wallets	2			ru.mw		
 2	Real Estate	1	4	2	ru.yandex.mobile.realty		Yandex Realty
 2	Real Estate	2			ru.cian.main		CIAN
 2	Real Estate	3			ru.domclick.mortgage		DomClick
