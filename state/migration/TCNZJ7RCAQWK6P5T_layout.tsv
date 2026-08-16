@@ -1,8 +1,14 @@
 page	blob	order	col	row	pkg	name	note
 dock		1			com.google.android.dialer		Phone
-dock		2			com.google.android.apps.messaging		SMS/Messages
-dock		3			com.android.chrome		Browser
+dock		1			com.google.android.apps.messaging		SMS/Messages
+dock		1			com.android.chrome		Browser
 dock	Messengers	1			chat.delta		Delta Chat (corrected - package is delta.chat's own app, not Signal; real Signal/Telegram/WhatsApp aren't installed on this phone yet)
+dock	Messengers	2			org.jitsi.meet		
+dock	Messengers	3			us.zoom.videomeetings		
+dock	Messengers	4			ru.yandex.telemost		
+dock	Messengers	5			com.microsoft.office.lync15		
+dock	Messengers	6			com.google.android.gm		Gmail
+dock	Messengers	7			ru.yandex.mail		Yandex Mail
 dock	LLM Assistants	1			com.openai.chatgpt		
 dock	LLM Assistants	2			com.anthropic.claude		
 dock	LLM Assistants	3			com.deepseek.chat		
@@ -12,8 +18,6 @@ dock	LLM Assistants	4			com.google.android.apps.bard		Gemini
 1	Finance	2			com.tradingview.tradingviewapp		
 1	Finance	3			com.coinmarketcap.android		
 1	Finance	4			com.yahoo.mobile.client.android.finance		
-3	Crypto	1			org.montelibero.sunce		Sunce Wallet (Stellar crypto)
-3	Broker	1			atws.app		IBKR Mobile - broker
 1	Productivity & Docs	1	2	1	com.google.android.apps.docs.editors.sheets		
 1	Productivity & Docs	2			com.google.android.apps.docs.editors.slides		
 1	Productivity & Docs	3			com.google.android.keep		
@@ -21,25 +25,19 @@ dock	LLM Assistants	4			com.google.android.apps.bard		Gemini
 1	Productivity & Docs	5			net.gsantner.markor		
 1	Productivity & Docs	6			com.adobe.reader		
 1	Productivity & Docs	7			com.adobe.scan.android		
-1	Books	1			com.kursx.smartbook		
-1	Books	2			org.geometerplus.zlibrary.ui.android		
-1	Cloud Storage	1	1	1	com.dropbox.android		
-1	Cloud Storage	2			ru.yandex.disk		
 1	Productivity & Docs	8			com.trello		
 1	Productivity & Docs	9			com.github.android		
 1	Productivity & Docs	10			io.coda.codaapp		
+1	Books	1			com.kursx.smartbook		
+1	Books	2			org.geometerplus.zlibrary.ui.android		
 1	Books	3			ru.litres.android		
 1	Books	4			ru.livelib.client		
+1	Cloud Storage	1	1	1	com.dropbox.android		
+1	Cloud Storage	2			ru.yandex.disk		
 1	Photos	1			com.google.android.apps.photos		Google Photos
 1	Photos	2			com.miui.gallery		MIUI Gallery
 1	Photos	3			com.lemon.lvoverseas		CapCut
 1		1			com.google.android.contacts		Contacts - standalone, pairs with dock Phone/SMS
-dock	Messengers	6			com.google.android.gm		Gmail
-dock	Messengers	7			ru.yandex.mail		Yandex Mail
-dock	Messengers	2			org.jitsi.meet		
-dock	Messengers	3			us.zoom.videomeetings		
-dock	Messengers	4			ru.yandex.telemost		
-dock	Messengers	5			com.microsoft.office.lync15		
 1	VPNs	1	4	5	app.hiddify.com		Hiddify
 1	VPNs	2			com.happproxy		Happ
 1	Language	1	0	1	com.google.android.apps.translate		
@@ -50,7 +48,6 @@ dock	Messengers	5			com.microsoft.office.lync15
 1	Music & Video	2			com.soundcloud.android		
 1	Music & Video	3			com.uma.musicvk		VK Music
 1	Music & Video	4			com.miui.fm		
-2	Entertainment	4	3	5	com.google.android.youtube		YouTube
 1	Health & Fitness	1	0	2	com.xiaomi.hm.health		Zepp Life (renamed - this is Zepp Life, formerly Mi Fit)
 1	Health & Fitness	2			com.google.android.apps.fitness		Google Fit
 1	Health & Fitness	3			com.strava		
@@ -58,12 +55,18 @@ dock	Messengers	5			com.microsoft.office.lync15
 1	Health & Fitness	5			com.garmin.android.apps.connectmobile		Garmin Connect
 1	Health & Fitness	6			com.garmin.android.apps.explore		Garmin Explore
 1	Health & Fitness	7			com.garmin.connectiq		Garmin Connect IQ
-1	Medicine	1			com.invitro.app		
 1	Health & Fitness	8			com.google.android.healthconnect.controller		Health Connect
 1	Health & Fitness	9			com.intvl.app		INTVL
 1	Health & Fitness	10			ru.rhr		Running Heroes Russia
 1	Health & Fitness	11			tech.aml.moneyrun		Moneyrun - moved here from Games, it's a running/fitness app
+1	Medicine	1			com.invitro.app		
+1	Medicine	2			com.kdfapp.prod		unidentified - no match found via search either
 1	Maps	1	1	2	com.outdooractive.Outdooractive		Outdooractive - moved here from Travel, groups with Garmin Explore per your outdoor/hiking bucket
+1	Maps	2			team.nineone.openloop_app.stage		
+1	Maps	3			com.google.android.apps.mapslite		
+1	Maps	4			net.osmand		
+1	Maps	5			net.osmand.plus		
+1	Maps	6			net.osmand.nauticalPlugin		
 1	Travel & Airlines	1			com.turkishairlines.mobile		Turkish Airlines
 1	Travel & Airlines	2			net.skyscanner.android.main		Skyscanner
 1	Travel & Airlines	3			ru.ostrovok.android		Ostrovok
@@ -99,12 +102,13 @@ dock	Messengers	5			com.microsoft.office.lync15
 1	App Stores	2			ru.vk.store		
 1	App Stores	3			com.huawei.appmarket		
 1	App Stores	4			org.fdroid.fdroid		
-1	Maps	2			team.nineone.openloop_app.stage		
-1	Medicine	2			com.kdfapp.prod		unidentified - no match found via search either
+2	Entertainment	1			com.vk.vkvideo		VK Video
+2	Entertainment	2			ru.kinopoisk		Kinopoisk
+2	Entertainment	3			ru.ivi.client		ivi
+2	Entertainment	4	3	5	com.google.android.youtube		YouTube
 2	Bank	1	1	0	ru.sberbankmobile		
 2	Bank	2			ru.sberbank_sbbol		
 2	Bank	3			ru.alfabank.mobile.android		
-2	Broker	1			ru.alfadirect.app		Alfa-Direct - broker
 2	Bank	4			ru.akbars.mobile		
 2	Bank	5			ru.gazprombank.android.mobilebank.app		
 2	Bank	6			ru.vtb24.mobilebanking.android		
@@ -112,10 +116,11 @@ dock	Messengers	5			com.microsoft.office.lync15
 2	Bank	8			com.idamobile.android.crediteuropa		
 2	Bank	9			ru.banki.banki		
 2	Bank	10			ru.raiffeisennews		
+2	Broker	1			ru.alfadirect.app		Alfa-Direct - broker
+2	Broker	2			ru.tinkoff.investing		Tinkoff Investing (T-Invest) - broker
 2	Business	1	2	0	ru.zhuck.webapp		Tochka Bank
 2	Business	2			ru.vtb.smb		VTB for business
 2	Business	3			ru.tinkoff.sme		Tinkoff for business
-2	Broker	2			ru.tinkoff.investing		Tinkoff Investing (T-Invest) - broker
 2	Insurance	1	4	0	ru.reso.osago		
 2	Insurance	2			ru.alfastrah.app		
 2	Pay RU	1			ru.nspk.mir.loyalty		
@@ -147,15 +152,12 @@ dock	Messengers	5			com.microsoft.office.lync15
 2	Trains	1	1	2	ru.rzd.pass		Russian Railways
 2	Trains	2			ru.mosmetro.metro		Moscow Metro
 2	Trains	3			ru.yandex.metro		Yandex Metro
+2	Trains	4			ru.yandex.rasp		Yandex Rasp - train/bus schedules
 2	Taxi & Ride	1	4	3	am.ggtaxi.main		
 2	Taxi & Ride	2			ru.yandex.taxi		Yandex Taxi/Go
 2	Maps & Navigation	1	0	3	ru.dublgis.dgismobile		2GIS
 2	Maps & Navigation	2			ru.yandex.yandexmaps		
 2	Maps & Navigation	3			ru.yandex.yandexnavi		
-1	Maps	3			com.google.android.apps.mapslite		
-1	Maps	4			net.osmand		
-1	Maps	5			net.osmand.plus		
-1	Maps	6			net.osmand.nauticalPlugin		
 2	Car Sharing	1	3	3	com.carshering		
 2	Car Sharing	2			ru.yandex.mobile.drive		
 2	Car Sharing	3			com.yandex.mobile.drive		different package id than the other Yandex Drive entry above - possible id migration, check which one is actually current on your phone
@@ -215,20 +217,18 @@ dock	Messengers	5			com.microsoft.office.lync15
 2	Marketplace	3			ru.aliexpress.buyer		AliExpress
 2	Marketplace	4			com.avito.android		Avito
 2	Marketplace	5			ru.beru.android		legacy Yandex Market app id - likely superseded, check if still used
+2	Marketplace	6			com.kazanexpress.ke_app		Kazan Express - Russian marketplace
 2	Social Networks	1	0	5	com.vkontakte.android		VK
-2	Entertainment	1			com.vk.vkvideo		VK Video
 2	Social Networks	2			ru.ok.android		Odnoklassniki
-2	Entertainment	2			ru.kinopoisk		Kinopoisk
-2	Entertainment	3			ru.ivi.client		ivi
+3	Crypto	1			org.montelibero.sunce		Sunce Wallet (Stellar crypto)
+3	Broker	1			atws.app		IBKR Mobile - broker
 3	Bank	1			kg.bta.mobilebank2		BTA Bank
 3	Bank	2			kz.kaspi.mobile		Kaspi.kz
 3	Bank	3			com.maanavan.mb_kyrgyzstan		MBANK
 3	Bank	4			kg.beeline.odp		
 3	Bank	5			kz.beeline.odp		
 3	Bank	6			com.intervale.baitushum		Baitushum
-2	Marketplace	6			com.kazanexpress.ke_app		Kazan Express - Russian marketplace
 3	Government	1			kz.mobile.mgov		
 3	Government	2			kz.mobile.mgov.business		
 3	Government	3			com.qazeta		QazETA
 4		1			com.mrsapp.platform		your own app in dev - dedicated last page
-2	Trains	4			ru.yandex.rasp		Yandex Rasp - train/bus schedules
