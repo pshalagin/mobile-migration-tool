@@ -12,7 +12,7 @@ dock	LLM Assistants	4			com.google.android.apps.bard		Gemini
 1	Finance	2			com.tradingview.tradingviewapp		
 1	Finance	3			com.coinmarketcap.android		
 1	Finance	4			com.yahoo.mobile.client.android.finance		
-1	Crypto	1			org.montelibero.sunce		Sunce Wallet (Stellar crypto)
+3	Crypto	1			org.montelibero.sunce		Sunce Wallet (Stellar crypto)
 3	Broker	1			atws.app		IBKR Mobile - broker
 1	Productivity & Docs	1	2	1	com.google.android.apps.docs.editors.sheets		
 1	Productivity & Docs	2			com.google.android.apps.docs.editors.slides		
