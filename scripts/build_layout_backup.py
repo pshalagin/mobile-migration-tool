@@ -100,23 +100,7 @@ def parse_layout_tsv(path):
     # editing in Excel/Numbers) and behaves like plain utf-8 otherwise —
     # handles both cases without needing to know which was used.
     with open(path, newline="", encoding="utf-8-sig") as f:
-        rows = list(csv.DictReader(f, delimiter="\t"))
-
-    def sort_key(i_r):
-        i, r = i_r
-        try:
-            order = int((r.get("order") or "0").strip())
-        except ValueError:
-            order = 0
-        return (order, i)
-
-    rows = [r for _, r in sorted(enumerate(rows), key=sort_key)]
-
-    # "dock" is just another container key alongside int page numbers —
-    # it supports blob (folder) grouping exactly like a page does.
-    containers = {}
-    group_index = {}
-    standalone_counter = 0
+        raw_rows = list(csv.DictReader(f, delimiter="\t"))
 
     def parse_int(v):
         v = (v or "").strip()
@@ -127,7 +111,27 @@ def parse_layout_tsv(path):
         except ValueError:
             return None
 
-    for r in rows:
+    def item_order(r):
+        try:
+            return int((r.get("order") or "0").strip())
+        except ValueError:
+            return 0
+
+    # "dock" is just another container key alongside int page numbers —
+    # it supports blob (folder) grouping exactly like a page does.
+    #
+    # Two separate concerns, kept separate on purpose: which GROUP a row
+    # belongs to and where groups sit relative to each other (driven by
+    # first-appearance in the file — predictable/WYSIWYG, since a group's
+    # rows can otherwise be scattered anywhere in the sheet), versus which
+    # ORDER items sit within one group's own folder (driven by `order`,
+    # since a folder's rows may not be entered in the sheet in the order
+    # you want them to appear inside the folder).
+    containers = {}
+    group_index = {}
+    standalone_counter = 0
+
+    for idx, r in enumerate(raw_rows):
         pkg = (r.get("pkg") or "").strip()
         if not pkg:
             continue
@@ -155,12 +159,19 @@ def parse_layout_tsv(path):
             containers[key_page].append([blob or None, [], None])
             group_index[key] = len(containers[key_page]) - 1
         g = containers[key_page][group_index[key]]
-        g[1].append(pkg)
+        g[1].append((item_order(r), idx, pkg))
         if g[2] is None and col is not None and row is not None:
             g[2] = (col, row)
 
-    dock_groups = [(name, items, pos) for name, items, pos in containers.pop("dock", [])]
-    pages = {p: [(name, items, pos) for name, items, pos in groups] for p, groups in containers.items()}
+    def finalize(groups):
+        out = []
+        for blob_name, items, pos in groups:
+            ordered_pkgs = [pkg for _, _, pkg in sorted(items, key=lambda t: (t[0], t[1]))]
+            out.append((blob_name, ordered_pkgs, pos))
+        return out
+
+    dock_groups = finalize(containers.pop("dock", []))
+    pages = {p: finalize(groups) for p, groups in containers.items()}
     return dock_groups, pages
 
 
@@ -298,6 +309,15 @@ class RowBuilder:
 
 
 def _place_one(rb, container, screen, blob_name, items, cx, cy):
+    # Hotseat quirk (confirmed against a real device export): Launcher3/
+    # Lawnchair uses the "screen" column as the dock's actual slot/rank
+    # index for container=-101, not a page number — cellX just mirrors it
+    # and cellY is always 0. Writing a constant screen (like a page would)
+    # makes every dock item claim the same slot, so all but one silently
+    # collide and vanish on restore. cx is already the intended slot, so
+    # use it for both.
+    if container == -101:
+        screen = cx
     if len(items) == 1:
         rb.add_app(items[0], container, screen, cx, cy)
     else:
