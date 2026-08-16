@@ -16,7 +16,8 @@ non-layout files and the exact favorites schema/pragmas) and replaces its
 favorites rows with ones generated from the layout tree:
 
   - Rows with page=dock -> the hotseat/dock row (container -101), frozen
-    across every page, one item per row in `order`.
+    across every page. Dock supports folders too, same as a page: rows
+    sharing a (dock, blob) group into one folder icon.
   - Rows with page=1,2,3... and no blob -> a plain top-level icon directly
     on that workspace screen (container -100, screen = page-1).
   - Rows sharing the same (page, blob) -> a folder icon on that page named
@@ -86,7 +87,8 @@ BLOB_RE = re.compile(r"^###\s+Blob:\s*(.+?)\s*$")
 BULLET_RE = re.compile(r"^-\s+(\S+)")
 
 # Both parsers produce this shape:
-#   dock_items: [pkg, ...]
+#   dock_groups: [(blob_name_or_None, [pkg, ...]), ...]   # dock supports
+#                                                          # folders too
 #   pages: {page_num: [(blob_name_or_None, [pkg, ...]), ...]}
 # A group with blob_name=None always holds exactly one item (a standalone
 # icon); a group with a real blob_name holds 1+ items (1 collapses to a
@@ -111,8 +113,9 @@ def parse_layout_tsv(path):
 
     rows = [r for _, r in sorted(enumerate(rows), key=sort_key)]
 
-    dock_items = []
-    pages = {}
+    # "dock" is just another container key alongside int page numbers —
+    # it supports blob (folder) grouping exactly like a page does.
+    containers = {}
     group_index = {}
     standalone_counter = 0
 
@@ -124,34 +127,33 @@ def parse_layout_tsv(path):
         blob = (r.get("blob") or "").strip()
 
         if page_raw.lower() == "dock":
-            dock_items.append(pkg)
-            continue
+            key_page = "dock"
+        else:
+            try:
+                key_page = int(page_raw)
+            except ValueError:
+                print(f"WARNING: skipping row with unrecognized page {page_raw!r} (pkg={pkg})")
+                continue
 
-        try:
-            page_num = int(page_raw)
-        except ValueError:
-            print(f"WARNING: skipping row with unrecognized page {page_raw!r} (pkg={pkg})")
-            continue
-
-        pages.setdefault(page_num, [])
+        containers.setdefault(key_page, [])
         if blob:
-            key = (page_num, blob)
+            key = (key_page, blob)
         else:
             standalone_counter += 1
-            key = (page_num, "__standalone__", standalone_counter)
+            key = (key_page, "__standalone__", standalone_counter)
         if key not in group_index:
-            pages[page_num].append([blob or None, []])
-            group_index[key] = len(pages[page_num]) - 1
-        pages[page_num][group_index[key]][1].append(pkg)
+            containers[key_page].append([blob or None, []])
+            group_index[key] = len(containers[key_page]) - 1
+        containers[key_page][group_index[key]][1].append(pkg)
 
-    for p in pages:
-        pages[p] = [(name, items) for name, items in pages[p]]
-
-    return dock_items, pages
+    dock_groups = [(name, items) for name, items in containers.pop("dock", [])]
+    pages = {p: [(name, items) for name, items in groups] for p, groups in containers.items()}
+    return dock_groups, pages
 
 
 # --------------------------------------------------------------------
-# 1b. Legacy markdown parser (layout_plan.md)
+# 1b. Legacy markdown parser (layout_plan.md) — dock has no folder
+# support in this format, every dock row is its own standalone icon.
 # --------------------------------------------------------------------
 
 def parse_plan_markdown(path):
@@ -193,7 +195,8 @@ def parse_plan_markdown(path):
 
     for p in pages:
         pages[p] = [(name, items) for name, items in pages[p]]
-    return dock_items, pages
+    dock_groups = [(None, [pkg]) for pkg in dock_items]
+    return dock_groups, pages
 
 
 # --------------------------------------------------------------------
@@ -329,44 +332,50 @@ class RowBuilder:
         return True
 
 
-def build_favorites(dock_items, pages, names, activities, cols, rows, hotseat_slots=None):
+def place_groups(rb, groups, container, screen, cols, rows_cap, label):
+    """Row-major placement of (blob_name_or_None, [pkgs]) groups into a
+    cols x rows_cap grid on the given container/screen. Shared by both
+    the dock (container -101, typically rows_cap=1) and workspace pages
+    (container -100, one call per page) — a folder and a dock both just
+    need "N group slots on a grid", the only difference is capacity."""
+    warnings = []
+    cell_idx = 0
+    capacity = cols * rows_cap
+    for blob_name, items in groups:
+        items = [p for p in items if p not in rb.placed_packages]
+        if not items:
+            continue
+        if cell_idx >= capacity:
+            warnings.append(
+                f"{label}: ran out of grid space ({cols}x{rows_cap}={capacity} cells) "
+                f"before placing '{blob_name or items[0]}' — bump capacity or trim.")
+            break
+        cx, cy = cell_idx % cols, cell_idx // cols
+        if len(items) == 1:
+            rb.add_app(items[0], container, screen, cx, cy)
+        else:
+            folder_id = rb.add_folder(blob_name, container, screen, cx, cy)
+            for i, pkg in enumerate(items):
+                rb.add_folder_item(pkg, folder_id, i)
+        cell_idx += 1
+    return warnings
+
+
+def build_favorites(dock_groups, pages, names, activities, cols, rows,
+                     dock_cols=None, dock_rows=1):
     now_ms = int(time.time() * 1000)
     rb = RowBuilder(names, activities, now_ms)
-    overflow_warnings = []
+    warnings = []
 
-    slots = hotseat_slots if hotseat_slots is not None else len(dock_items)
-    for i, pkg in enumerate(dock_items[:slots]):
-        rb.add_app(pkg, -101, 0, i, 0, rank=i)
-    if len(dock_items) > slots:
-        overflow_warnings.append(
-            f"Dock has {len(dock_items)} apps, only {slots} slots (--hotseat) — "
-            f"extras dropped (still placed if they also appear on a page).")
+    d_cols = dock_cols if dock_cols is not None else max(1, len(dock_groups))
+    warnings += place_groups(rb, dock_groups, container=-101, screen=0,
+                              cols=d_cols, rows_cap=dock_rows, label="Dock")
 
     for page_num in sorted(pages):
-        groups = pages[page_num]
-        screen = page_num - 1
-        cell_idx = 0
-        capacity = cols * rows
-        for blob_name, items in groups:
-            items = [p for p in items if p not in rb.placed_packages]
-            if not items:
-                continue
-            if cell_idx >= capacity:
-                overflow_warnings.append(
-                    f"Page {page_num}: ran out of grid space ({cols}x{rows}={capacity} "
-                    f"cells) before placing '{blob_name or items[0]}' — bump --cols/--rows "
-                    f"or trim this page.")
-                break
-            cx, cy = cell_idx % cols, cell_idx // cols
-            if len(items) == 1:
-                rb.add_app(items[0], -100, screen, cx, cy)
-            else:
-                folder_id = rb.add_folder(blob_name, -100, screen, cx, cy)
-                for i, pkg in enumerate(items):
-                    rb.add_folder_item(pkg, folder_id, i)
-            cell_idx += 1
+        warnings += place_groups(rb, pages[page_num], container=-100, screen=page_num - 1,
+                                  cols=cols, rows_cap=rows, label=f"Page {page_num}")
 
-    return rb.rows, overflow_warnings
+    return rb.rows, warnings
 
 
 # --------------------------------------------------------------------
@@ -416,10 +425,13 @@ def main():
     ap.add_argument("--serial", default=None,
                      help="ADB serial, for live launcher-activity resolution. "
                           "Omit to skip resolution (falls back to package-only intents).")
-    ap.add_argument("--cols", type=int, default=5)
-    ap.add_argument("--rows", type=int, default=5)
-    ap.add_argument("--hotseat", type=int, default=None,
-                     help="Dock slot cap. Defaults to however many dock rows the layout has.")
+    ap.add_argument("--cols", type=int, default=5, help="Workspace page grid columns.")
+    ap.add_argument("--rows", type=int, default=5, help="Workspace page grid rows.")
+    ap.add_argument("--dock-cols", type=int, default=None,
+                     help="Dock/hotseat grid columns. Defaults to however many dock "
+                          "groups (icons+folders) the layout has.")
+    ap.add_argument("--dock-rows", type=int, default=1,
+                     help="Dock/hotseat grid rows (most launchers support 1-2).")
     ap.add_argument("--out", type=Path, default=None)
     args = ap.parse_args()
 
@@ -432,17 +444,20 @@ def main():
     out_path = args.out or (STATE_DIR / "migration" / "generated.lawnchairbackup")
 
     if args.layout_tsv:
-        dock_items, pages = parse_layout_tsv(src_path)
+        dock_groups, pages = parse_layout_tsv(src_path)
     else:
-        dock_items, pages = parse_plan_markdown(src_path)
+        dock_groups, pages = parse_plan_markdown(src_path)
 
-    all_pkgs = set(dock_items)
+    all_pkgs = set()
+    for _, items in dock_groups:
+        all_pkgs.update(items)
     for groups in pages.values():
         for _, items in groups:
             all_pkgs.update(items)
 
-    print(f"Parsed {len(pages)} page(s), {len(dock_items)} dock item(s), "
-          f"{len(all_pkgs)} unique package(s) from {src_path.name}")
+    dock_item_count = sum(len(items) for _, items in dock_groups)
+    print(f"Parsed {len(pages)} page(s), {len(dock_groups)} dock group(s) "
+          f"({dock_item_count} app(s)), {len(all_pkgs)} unique package(s) from {src_path.name}")
 
     names = load_app_names()
     activities = load_launch_activity_cache()
@@ -463,8 +478,8 @@ def main():
 
     activities = {k: v for k, v in activities.items() if v}
 
-    rows, warnings = build_favorites(dock_items, pages, names, activities,
-                                      args.cols, args.rows, args.hotseat)
+    rows, warnings = build_favorites(dock_groups, pages, names, activities,
+                                      args.cols, args.rows, args.dock_cols, args.dock_rows)
     print(f"Built {len(rows)} favorites row(s).")
     for w in warnings:
         print(f"WARNING: {w}")
