@@ -115,7 +115,26 @@ launcher Activity via adb for a clean, pre-resolved icon (cached in
 a package-only intent Android resolves at tap time. `--cols`/`--rows`
 (default 5x5) control the per-page grid; `--dock-cols`/`--dock-rows`
 (default: fit / 1) control the dock — it'll warn instead of silently
-overlapping if something doesn't fit.
+overlapping if something doesn't fit. `--reserve-row PAGE:ROW` (repeatable)
+blocks a whole row from auto-placement for a home-screen widget (clock,
+weather, ...) that occupies grid space but isn't a layout-tsv item.
+
+Made changes by hand on the phone (dragged icons around) and want them
+back in the tracked TSV instead of re-typing them? Export a fresh backup
+from Lawnchair and run it the other direction:
+
+```
+python3 scripts/backup_to_layout.py \
+    --backup state/migration/<serial>_reference.lawnchairbackup \
+    --out state/migration/<serial>_layout.tsv
+```
+
+This reads real positions off the backup's `favorites` table, so the
+resulting TSV reflects the phone exactly — including `col`/`row` pins.
+Note it only round-trips items that are actually placed on-device right
+now: packages the TSV listed but that aren't installed (or got dropped
+during a restore) won't come back on their own — re-add them by hand
+after running this, same as before.
 
 ## Layout
 
