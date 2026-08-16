@@ -326,7 +326,7 @@ def _place_one(rb, container, screen, blob_name, items, cx, cy):
             rb.add_folder_item(pkg, folder_id, i)
 
 
-def place_groups(rb, groups, container, screen, cols, rows_cap, label):
+def place_groups(rb, groups, container, screen, cols, rows_cap, label, reserved_rows=frozenset()):
     """Placement of (blob_name_or_None, [pkgs], pos_or_None) groups into a
     cols x rows_cap grid on the given container/screen. Shared by both
     the dock (container -101, typically rows_cap=1) and workspace pages
@@ -335,10 +335,13 @@ def place_groups(rb, groups, container, screen, cols, rows_cap, label):
 
     Two passes: groups with an explicit (col, row) claim that exact cell
     first; everything else fills the remaining free cells in order,
-    skipping whatever's already taken."""
+    skipping whatever's already taken. `reserved_rows` are pre-marked
+    occupied before either pass (e.g. a home-screen widget, like a clock,
+    that lives on row 0 and isn't a layout-tsv item at all) so auto-fill
+    never lands anything on top of it."""
     warnings = []
     capacity = cols * rows_cap
-    occupied = set()
+    occupied = {(cx, cy) for cy in reserved_rows for cx in range(cols)}
     auto_groups = []
 
     for blob_name, items, pos in groups:
@@ -384,10 +387,11 @@ def place_groups(rb, groups, container, screen, cols, rows_cap, label):
 
 
 def build_favorites(dock_groups, pages, names, activities, cols, rows,
-                     dock_cols=None, dock_rows=1):
+                     dock_cols=None, dock_rows=1, reserved_rows_by_page=None):
     now_ms = int(time.time() * 1000)
     rb = RowBuilder(names, activities, now_ms)
     warnings = []
+    reserved_rows_by_page = reserved_rows_by_page or {}
 
     d_cols = dock_cols if dock_cols is not None else max(1, len(dock_groups))
     warnings += place_groups(rb, dock_groups, container=-101, screen=0,
@@ -395,7 +399,8 @@ def build_favorites(dock_groups, pages, names, activities, cols, rows,
 
     for page_num in sorted(pages):
         warnings += place_groups(rb, pages[page_num], container=-100, screen=page_num - 1,
-                                  cols=cols, rows_cap=rows, label=f"Page {page_num}")
+                                  cols=cols, rows_cap=rows, label=f"Page {page_num}",
+                                  reserved_rows=reserved_rows_by_page.get(page_num, frozenset()))
 
     return rb.rows, warnings
 
@@ -453,8 +458,21 @@ def main():
                           "groups (icons+folders) the layout has.")
     ap.add_argument("--dock-rows", type=int, default=1,
                      help="Dock/hotseat grid rows (most launchers support 1-2).")
+    ap.add_argument("--reserve-row", action="append", default=[], metavar="PAGE:ROW",
+                     help="Reserve a whole grid row on a page so auto-placed groups never "
+                          "land there — for home-screen widgets (e.g. a clock) that aren't "
+                          "layout-tsv items but still occupy space. Repeatable, "
+                          "e.g. --reserve-row 1:0 reserves row 0 on page 1.")
     ap.add_argument("--out", type=Path, default=None)
     args = ap.parse_args()
+
+    reserved_rows_by_page = {}
+    for spec in args.reserve_row:
+        try:
+            page_str, row_str = spec.split(":")
+            reserved_rows_by_page.setdefault(int(page_str), set()).add(int(row_str))
+        except ValueError:
+            sys.exit(f"--reserve-row expects PAGE:ROW (e.g. 1:0), got {spec!r}")
 
     src_path = args.layout_tsv
     if not src_path.exists():
@@ -497,7 +515,8 @@ def main():
     activities = {k: v for k, v in activities.items() if v}
 
     rows, warnings = build_favorites(dock_groups, pages, names, activities,
-                                      args.cols, args.rows, args.dock_cols, args.dock_rows)
+                                      args.cols, args.rows, args.dock_cols, args.dock_rows,
+                                      reserved_rows_by_page)
     print(f"Built {len(rows)} favorites row(s).")
     for w in warnings:
         print(f"WARNING: {w}")
