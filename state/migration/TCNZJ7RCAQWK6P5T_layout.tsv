@@ -1,111 +1,164 @@
 page	blob	order	col	row	pkg	name	note
-dock		1			com.google.android.dialer		Phone
-dock		1			com.google.android.apps.messaging		SMS/Messages
-dock		1			com.android.chrome		Browser
-dock	Messengers	1			chat.delta		Delta Chat (corrected - package is delta.chat's own app, not Signal; real Signal/Telegram/WhatsApp aren't installed on this phone yet)
+dock	LLM Assistants	1	1	0	com.openai.chatgpt		
+dock	LLM Assistants	2			com.anthropic.claude		
+dock	LLM Assistants	3			com.deepseek.chat		
+dock	LLM Assistants	4			com.google.android.apps.bard		
+dock		1	0	0	com.google.android.dialer		
+dock	Messengers	1	2	0	chat.delta		
 dock	Messengers	2			org.jitsi.meet		
 dock	Messengers	3			us.zoom.videomeetings		
 dock	Messengers	4			ru.yandex.telemost		
 dock	Messengers	5			com.microsoft.office.lync15		
-dock	Messengers	6			com.google.android.gm		Gmail
-dock	Messengers	7			ru.yandex.mail		Yandex Mail
-dock	LLM Assistants	1			com.openai.chatgpt		
-dock	LLM Assistants	2			com.anthropic.claude		
-dock	LLM Assistants	3			com.deepseek.chat		
-dock	LLM Assistants	4			com.google.android.apps.bard		Gemini
-1	Payment	1	4	4	com.google.android.apps.walletnfcrel		
-2	Finance	1			com.mobile.bitkogan		
-2	Finance	2			com.tradingview.tradingviewapp		
-2	Finance	3			com.coinmarketcap.android		
-2	Finance	4			com.yahoo.mobile.client.android.finance		
+dock	Messengers	6			com.google.android.gm		
+dock	Messengers	7			ru.yandex.mail		
+dock		1	3	0	com.android.chrome		
+dock		1	4	0	com.google.android.apps.messaging		
+1	Xiaomi / System Utilities	1	2	3	com.miui.calculator		
+1	Xiaomi / System Utilities	2			com.android.deskclock		
+1	Xiaomi / System Utilities	3			com.miui.screenrecorder		
+1	Xiaomi / System Utilities	4			com.android.soundrecorder		
+1	Xiaomi / System Utilities	5			com.xiaomi.calendar		
+1	Xiaomi / System Utilities	6			com.xiaomi.scanner		
+1	Xiaomi / System Utilities	7			app.lawnchair.play		
+1	Xiaomi / System Utilities	8			com.miui.compass		not currently installed on device
+1	Xiaomi / System Utilities	9			com.xiaomi.midrop		not currently installed on device
 1	Productivity & Docs	1	2	1	com.google.android.apps.docs.editors.sheets		
 1	Productivity & Docs	2			com.google.android.apps.docs.editors.slides		
 1	Productivity & Docs	3			com.google.android.keep		
-1	Productivity & Docs	4			com.miui.notes		
-1	Productivity & Docs	5			net.gsantner.markor		
-1	Productivity & Docs	6			com.adobe.reader		
-1	Productivity & Docs	7			com.adobe.scan.android		
-1	Productivity & Docs	8			com.trello		
-1	Productivity & Docs	9			com.github.android		
-1	Productivity & Docs	10			io.coda.codaapp		
-1	Books	1			com.kursx.smartbook		
-1	Books	2			org.geometerplus.zlibrary.ui.android		
-1	Books	3			ru.litres.android		
-1	Books	4			ru.livelib.client		
-1	Cloud Storage	1	1	1	com.dropbox.android		
-1	Cloud Storage	2			ru.yandex.disk		
-1	Photos	1			com.google.android.apps.photos		Google Photos
-1	Photos	2			com.miui.gallery		MIUI Gallery
-1	Photos	3			com.lemon.lvoverseas		CapCut
-1		1			com.google.android.contacts		Contacts - standalone, pairs with dock Phone/SMS
-1	VPNs	1	4	5	app.hiddify.com		Hiddify
-1	VPNs	2			com.happproxy		Happ
-1	Language	1	0	1	com.google.android.apps.translate		
-1	Language	2			com.softissimo.reverso.context		
-1	Language	3			ru.poas.learn.japanese.jlpt.katakana.kana.hiragana.kanji.romaji		
-1	Language	4			ru.poas.turkishwords		
-1	Music & Video	1			ru.yandex.music		
-1	Music & Video	2			com.soundcloud.android		
-1	Music & Video	3			com.uma.musicvk		VK Music
-1	Music & Video	4			com.miui.fm		
-1	Health & Fitness	1	0	2	com.xiaomi.hm.health		Zepp Life (renamed - this is Zepp Life, formerly Mi Fit)
-1	Health & Fitness	2			com.google.android.apps.fitness		Google Fit
+1	Productivity & Docs	4			net.gsantner.markor		
+1	Productivity & Docs	5			com.adobe.reader		
+1	Productivity & Docs	6			com.adobe.scan.android		
+1	Productivity & Docs	7			com.trello		
+1	Productivity & Docs	8			com.github.android		
+1	Productivity & Docs	9			io.coda.codaapp		
+1	Productivity & Docs	10			com.miui.notes		not currently installed on device
+1	Health & Fitness	1	0	2	com.xiaomi.hm.health		
+1	Health & Fitness	2			com.google.android.apps.fitness		
 1	Health & Fitness	3			com.strava		
 1	Health & Fitness	4			com.zwift.android.prod		
-1	Health & Fitness	5			com.garmin.android.apps.connectmobile		Garmin Connect
-1	Health & Fitness	6			com.garmin.android.apps.explore		Garmin Explore
-1	Health & Fitness	7			com.garmin.connectiq		Garmin Connect IQ
-1	Health & Fitness	8			com.google.android.healthconnect.controller		Health Connect
-1	Health & Fitness	9			com.intvl.app		INTVL
-1	Health & Fitness	10			ru.rhr		Running Heroes Russia
-1	Health & Fitness	11			tech.aml.moneyrun		Moneyrun - moved here from Games, it's a running/fitness app
-2	Medicine	1			com.invitro.app		
-2	Medicine	2			com.kdfapp.prod		unidentified - no match found via search either
-1	Maps	1	1	2	com.outdooractive.Outdooractive		Outdooractive - moved here from Travel, groups with Garmin Explore per your outdoor/hiking bucket
+1	Health & Fitness	5			com.garmin.android.apps.connectmobile		
+1	Health & Fitness	6			com.garmin.android.apps.explore		
+1	Health & Fitness	7			com.garmin.connectiq		
+1	Health & Fitness	8			com.google.android.healthconnect.controller		
+1	Health & Fitness	9			com.intvl.app		
+1	Health & Fitness	10			ru.rhr		
+1	Health & Fitness	11			tech.aml.moneyrun		
+1	Accounts & Security	1	4	1	com.google.android.apps.authenticator2		
+1	Accounts & Security	2			com.passbolt.mobile.android		
+1	Accounts & Security	3			com.synology.securesignin		
+1	Accounts & Security	4			com.xiaomi.finddevice		
+1	Accounts & Security	5			com.google.android.apps.adm		
+1	Maps	1	1	2	com.outdooractive.Outdooractive		
 1	Maps	2			team.nineone.openloop_app.stage		
 1	Maps	3			com.google.android.apps.mapslite		
 1	Maps	4			net.osmand		
 1	Maps	5			net.osmand.plus		
 1	Maps	6			net.osmand.nauticalPlugin		
-1	Travel & Airlines	1			com.turkishairlines.mobile		Turkish Airlines
-1	Travel & Airlines	2			net.skyscanner.android.main		Skyscanner
-1	Travel & Airlines	3			ru.ostrovok.android		Ostrovok
-1	Travel & Airlines	4			com.airbnb.android		Airbnb
-1	Travel & Airlines	5			com.booking		Booking.com
-1	Travel & Airlines	6			com.pozitron.pegasus		Pegasus Airlines
-1	Travel & Airlines	7			ru.lynx.aero		Lynx Aero
-1	Travel & Airlines	8			com.flyscat.scat		SCAT Airlines (Kazakhstan)
-1	Accounts & Security	1	4	1	com.google.android.apps.authenticator2		
-1	Accounts & Security	2			com.passbolt.mobile.android		
-1	Accounts & Security	3			com.synology.securesignin		
-1	Accounts & Security	4			com.google.android.apps.adm		
-1	Accounts & Security	5			com.xiaomi.finddevice		
-1	Weather	1	1	5	com.miui.weather2		
-1	Weather	2			ru.yandex.weatherplugin		
-1	Household	1			com.xiaomi.smarthome		Xiaomi Home
-1	Household	2			com.huawei.smarthome		
-1	Household	3			com.dreame.smartlife		Dreamehome
-1	Household	4			com.tion.magicair		MagicAir
-1	Household	5			ru.ufanet.smarthome		
-1	Household	6			com.google.android.apps.chromecast.app		Google Home/Chromecast
-1	Household	7			ru.domyland.a101android		A101 - moved here from Real Estate, matches your Household grouping (it's building/utilities management, not a shopping app)
-1	Xiaomi / System Utilities	1			com.miui.calculator		
-1	Xiaomi / System Utilities	2			com.miui.compass		
-1	Xiaomi / System Utilities	3			com.miui.screenrecorder		
-1	Xiaomi / System Utilities	4			com.android.deskclock		
-1	Xiaomi / System Utilities	5			com.android.soundrecorder		
-1	Xiaomi / System Utilities	6			com.xiaomi.calendar		
-1	Xiaomi / System Utilities	7			com.xiaomi.midrop		
-1	Xiaomi / System Utilities	8			com.xiaomi.scanner		
-1	Xiaomi / System Utilities	9			app.lawnchair.play		
-1	App Stores	1			com.aurora.store		
+1	VPNs	1	4	5	app.hiddify.com		
+1	VPNs	2			com.happproxy		
+1	App Stores	1	3	3	com.aurora.store		
 1	App Stores	2			ru.vk.store		
 1	App Stores	3			com.huawei.appmarket		
 1	App Stores	4			org.fdroid.fdroid		
-2	Entertainment	1			com.vk.vkvideo		VK Video
-2	Entertainment	2			ru.kinopoisk		Kinopoisk
-2	Entertainment	3			ru.ivi.client		ivi
-2	Entertainment	4	3	5	com.google.android.youtube		YouTube
+1	Photos	1	2	2	com.google.android.apps.photos		
+1	Photos	2			com.miui.gallery		
+1	Photos	3			com.lemon.lvoverseas		
+1	Music & Video	1	4	2	ru.yandex.music		
+1	Music & Video	2			com.soundcloud.android		
+1	Music & Video	3			com.uma.musicvk		
+1	Music & Video	4			com.miui.fm		
+1	Language	1	0	1	com.google.android.apps.translate		
+1	Language	2			com.softissimo.reverso.context		
+1	Language	3			ru.poas.learn.japanese.jlpt.katakana.kana.hiragana.kanji.romaji		
+1	Language	4			ru.poas.turkishwords		
+1	Books	1	3	1	com.kursx.smartbook		
+1	Books	2			org.geometerplus.zlibrary.ui.android		
+1	Books	3			ru.litres.android		
+1	Books	4			ru.livelib.client		
+1	Payment	1	4	4	com.google.android.apps.walletnfcrel		
+1	Payment	2			ru.nspk.mir.loyalty		
+1	Payment	3			ru.nspk.mirpay		
+1	Payment	4			ru.nspk.sbpay		
+1	Cloud Storage	1	1	1	com.dropbox.android		
+1	Cloud Storage	2			ru.yandex.disk		
+1		1	0	5	com.google.android.contacts		
+1	Weather	1			com.miui.weather2		not currently installed on device
+1	Weather	2	1	5	ru.yandex.weatherplugin		
+2	Avia - Russia	1	0	2	ru.aeroflot		
+2	Avia - Russia	2			ru.s7.android		
+2	Avia - Russia	3			com.appkode.pobeda.aero		
+2	Avia - Russia	4			ru.aviasales		
+2	Avia - Russia	5			aero.svo.app		
+2	Groceries	1	0	1	ru.pyaterochka.app.browser		
+2	Groceries	2			ru.perekrestok.app		
+2	Groceries	3			ru.myauchan.droid		
+2	Groceries	4			ru.myspar		
+2	Groceries	5			ru.globus.app		
+2	Groceries	6			ru.tander.magnit		
+2	Groceries	7			ru.av.vkusomania		
+2	Groceries	8			ru.vkusvill		
+2	Groceries	9			com.icemobile.lenta.prod		
+2	Groceries	10			ru.x5.omni		
+2	Groceries	11			club.chizhik		
+2	Food	1	1	1	ru.dodopizza.app		
+2	Food	2			ru.burgerking		
+2	Food	3			ru.kfc.kfc_delivery		
+2	Food	4			com.deliveryclub		
+2	Food	5			pro.tdnm.gurmanica		
+2	Food	6			com.tastycoffee.shop		
+2	Food	7			com.apegroup.mcdonaldsrussia		
+2	Food	8			com.loyaltyplant.partner.subway		
+2	Pharmacy	1	4	4	ru.apteka		
+2	Pharmacy	2			ru.getpharma.eapteka		
+2	Pharmacy	3			com.apteka.sklad		
+2	Pharmacy	4			ru.aptechestvo.app		
+2	Pharmacy	5			com.platfomni.vita		
+2	Marketplace	1	3	1	ru.ozon.app.android		
+2	Marketplace	2			com.wildberries.ru		
+2	Marketplace	3			ru.aliexpress.buyer		
+2	Marketplace	4			com.avito.android		
+2	Marketplace	5			ru.beru.android		
+2	Marketplace	6			com.kazanexpress.ke_app		
+2	Finance	1	0	0	com.mobile.bitkogan		
+2	Finance	2			com.tradingview.tradingviewapp		
+2	Finance	3			com.coinmarketcap.android		
+2	Finance	4			com.yahoo.mobile.client.android.finance		
+2	Telecom / ISP - Russia	1	1	5	ru.mts.mymts		
+2	Telecom / ISP - Russia	2			ru.yota.android		
+2	Telecom / ISP - Russia	3			com.ertelecom.agent		
+2	Telecom / ISP - Russia	4			com.dartit.RTcabinet		
+2	Telecom / ISP - Russia	5			ru.rostel		
+2	Telecom / ISP - Russia	6			ru.ufanet.myufanet		
+2	Telecom / ISP - Russia	7			com.smartint.formula		
+2	Telecom / ISP - Russia	8			ru.netcraze.app		
+2	Household	1	2	5	com.xiaomi.smarthome		
+2	Household	2			com.huawei.smarthome		
+2	Household	3			com.dreame.smartlife		
+2	Household	4			com.tion.magicair		
+2	Household	5			ru.ufanet.smarthome		
+2	Household	6			com.google.android.apps.chromecast.app		
+2	Household	7			ru.domyland.a101android		
+2	Government & Official - Russia	1	4	5	ru.gosuslugi.auto		
+2	Government & Official - Russia	2			ru.gosuslugi.goskey		
+2	Government & Official - Russia	3			ru.gosuslugi.pos		
+2	Government & Official - Russia	4			ru.altarix.mos.pgu		
+2	Government & Official - Russia	5			ru.mosgorpass		
+2	Government & Official - Russia	6			ru.fns.lkfl		
+2	Government & Official - Russia	7			ru.sigma.gisgkh		
+2	Government & Official - Russia	8			ru.technokad.digitalkey		
+2	Government & Official - Russia	9			com.programmisty.emiasapp		
+2	Government & Official - Russia	10			ru.mos.app		
+2	Government & Official - Russia	11			com.easypay_fssp		
+2	Retail	1	2	1	com.lamoda.lite		
+2	Retail	2			ru.sportmaster.app		
+2	Retail	3			goldapple.ru.goldapple.customers		
+2	Retail	4			com.gipfel.ecommers		
+2	Retail	5			ru.ostin.android.app		
+2	Retail	6			com.tradeinnsl		
+2	Entertainment	1	3	5	com.vk.vkvideo		
+2	Entertainment	2			ru.kinopoisk		
+2	Entertainment	3			ru.ivi.client		
+2	Entertainment	4			com.google.android.youtube		
 2	Bank	1	1	0	ru.sberbankmobile		
 2	Bank	2			ru.sberbank_sbbol		
 2	Bank	3			ru.alfabank.mobile.android		
@@ -116,119 +169,66 @@ dock	LLM Assistants	4			com.google.android.apps.bard		Gemini
 2	Bank	8			com.idamobile.android.crediteuropa		
 2	Bank	9			ru.banki.banki		
 2	Bank	10			ru.raiffeisennews		
-2	Broker	1			ru.alfadirect.app		Alfa-Direct - broker
-2	Broker	2			ru.tinkoff.investing		Tinkoff Investing (T-Invest) - broker
-2	Business	1	2	0	ru.zhuck.webapp		Tochka Bank
-2	Business	2			ru.vtb.smb		VTB for business
-2	Business	3			ru.tinkoff.sme		Tinkoff for business
-2	Insurance	1	4	0	ru.reso.osago		
-2	Insurance	2			ru.alfastrah.app		
-1	Payment	2			ru.nspk.mir.loyalty		
-1	Payment	3			ru.nspk.mirpay		
-1	Payment	4			ru.nspk.sbpay		
-2	Wallets	1			ru.yoo.money		YooMoney
-2	Wallets	2			ru.mw		
-2	Real Estate	1	4	2	ru.yandex.mobile.realty		Yandex Realty
-2	Real Estate	2			ru.cian.main		CIAN
-2	Real Estate	3			ru.domclick.mortgage		DomClick
-2	Jobs	1			ru.hh.android		HeadHunter
-2	Jobs	2			ru.hh.employer.android		HeadHunter for Employers
-2	Government & Official - Russia	1			ru.gosuslugi.auto		
-2	Government & Official - Russia	2			ru.gosuslugi.goskey		
-2	Government & Official - Russia	3			ru.gosuslugi.pos		
-2	Government & Official - Russia	4			ru.altarix.mos.pgu		
-2	Government & Official - Russia	5			ru.mosgorpass		
-2	Government & Official - Russia	6			ru.fns.lkfl		personal tax
-2	Government & Official - Russia	7			ru.sigma.gisgkh		
-2	Government & Official - Russia	8			ru.technokad.digitalkey		Gosklyuch
-2	Government & Official - Russia	9			com.programmisty.emiasapp		EMIAS
-2	Government & Official - Russia	10			ru.mos.app		Moya Moskva - moved here from Taxi/Maps, matches your Gov folder
-2	Government & Official - Russia	11			com.easypay_fssp		FSSP/bailiffs payments - moved here from Banking, matches your Gov folder
-2	Avia - Russia	1	0	2	ru.aeroflot		Aeroflot
-2	Avia - Russia	2			ru.s7.android		S7 Airlines
-2	Avia - Russia	3			com.appkode.pobeda.aero		Pobeda
-2	Avia - Russia	4			ru.aviasales		Aviasales
-2	Avia - Russia	5			aero.svo.app		SVO airport
-2	Trains	1	1	2	ru.rzd.pass		Russian Railways
-2	Trains	2			ru.mosmetro.metro		Moscow Metro
-2	Trains	3			ru.yandex.metro		Yandex Metro
-2	Trains	4			ru.yandex.rasp		Yandex Rasp - train/bus schedules
-2	Taxi & Ride	1	4	3	am.ggtaxi.main		
-2	Taxi & Ride	2			ru.yandex.taxi		Yandex Taxi/Go
-2	Maps & Navigation	1	0	3	ru.dublgis.dgismobile		2GIS
-2	Maps & Navigation	2			ru.yandex.yandexmaps		
-2	Maps & Navigation	3			ru.yandex.yandexnavi		
+2	Medicine	1	3	4	com.invitro.app		
+2	Medicine	2			com.kdfapp.prod		
+2	Shipping	1	4	1	ru.digipeople.pickpoint		
+2	Shipping	2			ru.boxberry.mobile		
+2	Shipping	3			com.logistic.sdek		
+2	Shipping	4			ru.dpd.recipient		
+2	Shipping	5			com.octopod.russianpost.client.android		
 2	Car Sharing	1	3	3	com.carshering		
-2	Car Sharing	2			ru.yandex.mobile.drive		
-2	Car Sharing	3			com.yandex.mobile.drive		different package id than the other Yandex Drive entry above - possible id migration, check which one is actually current on your phone
-2	Car Sharing	4			ru.belkacar.belkacar		BelkaCar
+2	Car Sharing	2			com.yandex.mobile.drive		
+2	Car Sharing	3			ru.belkacar.belkacar		
+2	Car Sharing	4			ru.yandex.mobile.drive		not currently installed on device - check vs com.yandex.mobile.drive id
+2	Insurance	1	2	4	ru.reso.osago		
+2	Insurance	2			ru.alfastrah.app		
+2	Real Estate	1	4	2	ru.cian.main		
+2	Real Estate	2			ru.domclick.mortgage		
+2	Real Estate	3			ru.yandex.mobile.realty		not currently installed on device
 2	Road & Parking	1	1	3	ru.mosparking.appnew		
 2	Road & Parking	2			ru.gorparkovki.federal		
 2	Road & Parking	3			ru.russianhighways.mobile		
-2	Telecom / ISP - Russia	1	1	5	ru.mts.mymts		
-2	Telecom / ISP - Russia	2			ru.yota.android		
-2	Telecom / ISP - Russia	3			com.ertelecom.agent		
-2	Telecom / ISP - Russia	4			com.dartit.RTcabinet		
-2	Telecom / ISP - Russia	5			ru.rostel		
-2	Telecom / ISP - Russia	6			ru.ufanet.myufanet		
-2	Telecom / ISP - Russia	7			com.smartint.formula		
-2	Telecom / ISP - Russia	8			ru.netcraze.app		
+2	Jobs	1	0	4	ru.hh.android		
+2	Jobs	2			ru.hh.employer.android		
+2	Trains	1	1	2	ru.rzd.pass		
+2	Trains	2			ru.mosmetro.metro		
+2	Trains	3			ru.yandex.metro		
+2	Trains	4			ru.yandex.rasp		
+2	Wallets	1	4	0	ru.yoo.money		
+2	Wallets	2			ru.mw		
+2	Social Networks	1	0	5	com.vkontakte.android		
+2	Social Networks	2			ru.ok.android		
 2	Fuel	1	2	3	com.gpn.azs		
 2	Fuel	2			ru.tatneft.gasstations		
 2	Fuel	3			ru.yandex.mobile.gasstations		
-2	Fuel	4			ru.serebryakovas.lukoilmobileapp		Lukoil
-2	Groceries	1	0	1	ru.pyaterochka.app.browser		Pyaterochka
-2	Groceries	2			ru.perekrestok.app		Perekrestok
-2	Groceries	3			ru.myauchan.droid		Auchan
-2	Groceries	4			ru.myspar		SPAR
-2	Groceries	5			ru.globus.app		Globus
-2	Groceries	6			ru.tander.magnit		Magnit
-2	Groceries	7			ru.av.vkusomania		
-2	Groceries	8			ru.vkusvill		VkusVill
-2	Groceries	9			com.icemobile.lenta.prod		Lenta
-2	Groceries	10			ru.x5.omni		
-2	Groceries	11			club.chizhik		Chizhik
-2	Pharmacy	1	4	4	ru.apteka		apteka.ru
-2	Pharmacy	2			ru.getpharma.eapteka		Eapteka
-2	Pharmacy	3			com.apteka.sklad		
-2	Pharmacy	4			ru.aptechestvo.app		Aptechestvo
-2	Pharmacy	5			com.platfomni.vita		Vita Pharmacy
-2	Food	1	1	1	ru.dodopizza.app		Dodo Pizza
-2	Food	2			ru.burgerking		Burger King
-2	Food	3			ru.kfc.kfc_delivery		Rostic's (KFC Russia rebrand)
-2	Food	4			com.deliveryclub		Delivery
-2	Food	5			pro.tdnm.gurmanica		
-2	Food	6			com.tastycoffee.shop		Tasty Coffee
-2	Food	7			com.apegroup.mcdonaldsrussia		Vkusno i tochka (McDonald's Russia rebrand)
-2	Food	8			com.loyaltyplant.partner.subway		SUBJOY
-2	Shipping	1	4	1	ru.digipeople.pickpoint		PickPoint
-2	Shipping	2			ru.boxberry.mobile		Boxberry
-2	Shipping	3			com.logistic.sdek		CDEK
-2	Shipping	4			ru.dpd.recipient		DPD
-2	Shipping	5			com.octopod.russianpost.client.android		Russian Post
-2	Retail	1	2	1	com.lamoda.lite		Lamoda
-2	Retail	2			ru.sportmaster.app		Sportmaster
-2	Retail	3			goldapple.ru.goldapple.customers		Gold Apple
-2	Retail	4			com.gipfel.ecommers		Gipfel
-2	Retail	5			ru.ostin.android.app		Ostin
-2	Retail	6			com.tradeinnsl		
-2	Marketplace	1	3	1	ru.ozon.app.android		OZON
-2	Marketplace	2			com.wildberries.ru		Wildberries
-2	Marketplace	3			ru.aliexpress.buyer		AliExpress
-2	Marketplace	4			com.avito.android		Avito
-2	Marketplace	5			ru.beru.android		legacy Yandex Market app id - likely superseded, check if still used
-2	Marketplace	6			com.kazanexpress.ke_app		Kazan Express - Russian marketplace
-2	Social Networks	1	0	5	com.vkontakte.android		VK
-2	Social Networks	2			ru.ok.android		Odnoklassniki
-3	Crypto	1			org.montelibero.sunce		Sunce Wallet (Stellar crypto)
-3	Broker	1			atws.app		IBKR Mobile - broker
-3	Bank	1			kg.bta.mobilebank2		BTA Bank
-3	Bank	2			kz.kaspi.mobile		Kaspi.kz
-3	Bank	3			com.maanavan.mb_kyrgyzstan		MBANK
+2	Fuel	4			ru.serebryakovas.lukoilmobileapp		
+2	Broker	1	3	0	ru.alfadirect.app		
+2	Broker	2			ru.tinkoff.investing		
+2	Business	1	2	0	ru.zhuck.webapp		
+2	Business	2			ru.vtb.smb		
+2	Business	3			ru.tinkoff.sme		
+2	Taxi & Ride	1	4	3	am.ggtaxi.main		
+2	Taxi & Ride	2			ru.yandex.taxi		
+2	Maps & Navigation	1	0	3	ru.dublgis.dgismobile		
+2	Maps & Navigation	2			ru.yandex.yandexmaps		
+2	Maps & Navigation	3			ru.yandex.yandexnavi		
+3	Travel & Airlines	1	0	1	com.turkishairlines.mobile		
+3	Travel & Airlines	2			net.skyscanner.android.main		
+3	Travel & Airlines	3			ru.ostrovok.android		
+3	Travel & Airlines	4			com.airbnb.android		
+3	Travel & Airlines	5			com.booking		
+3	Travel & Airlines	6			com.pozitron.pegasus		
+3	Travel & Airlines	7			ru.lynx.aero		
+3	Travel & Airlines	8			com.flyscat.scat		
+3	Bank	1	1	0	kg.bta.mobilebank2		
+3	Bank	2			kz.kaspi.mobile		
+3	Bank	3			com.maanavan.mb_kyrgyzstan		
 3	Bank	4			kg.beeline.odp		
 3	Bank	5			kz.beeline.odp		
-3	Bank	6			com.intervale.baitushum		Baitushum
-3	Government	1			kz.mobile.mgov		
+3	Bank	6			com.intervale.baitushum		
+3	Government	1	4	5	kz.mobile.mgov		
 3	Government	2			kz.mobile.mgov.business		
-3	Government	3			com.qazeta		QazETA
-4		1			com.mrsapp.platform		your own app in dev - dedicated last page
+3	Government	3			com.qazeta		
+3		1	3	0	atws.app		
+3		1	4	0	org.montelibero.sunce		
+4		1	0	0	com.mrsapp.platform		
