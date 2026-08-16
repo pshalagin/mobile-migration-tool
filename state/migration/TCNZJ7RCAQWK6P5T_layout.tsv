@@ -220,3 +220,16 @@ dock	LLM Assistants	4	com.google.android.apps.bard		Gemini — newly found
 2	Groceries & Retail Chains	8	ru.aptechestvo.app		pharmacy chain
 2	Jobs	1	ru.hh.android		HeadHunter
 2	Jobs	2	ru.hh.employer.android		HeadHunter for Employers
+1	Travel & Airlines	10	com.flyscat.scat		SCAT Airlines (Kazakhstan)
+1	Health & Fitness	9	com.intvl.app		INTVL — territory running game, Strava sync
+1	Health & Fitness	10	ru.rhr		Running Heroes Russia — race tracking
+1	Photos	3	com.lemon.lvoverseas		CapCut video editor
+2	Groceries & Retail Chains	9	com.platfomni.vita		Vita Pharmacy
+3	Government — KZ/KG	4	com.qazeta		QazETA — Kazakhstan e-visa/e-resident app
+2	Telecom / ISP — Russia	5	com.smartint.formula		Formula-Internet — ISP account app
+2	Telecom / ISP — Russia	6	ru.netcraze.app		Netcraze — home router management
+dock	Payment	6	org.montelibero.sunce		Sunce Wallet (Stellar crypto)
+dock	Payment	7	atws.app		IBKR Mobile (Interactive Brokers)
+2	Banking & Payments — Russia	4	ru.zhuck.webapp		Tochka Bank (business banking)
+1	Review Later	1	com.mrsapp.platform		unidentified — possibly your own mrs-app project
+1	Review Later	2	com.kdfapp.prod		unidentified — no match found via search either
