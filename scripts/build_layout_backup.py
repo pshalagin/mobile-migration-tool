@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Turn a layout tree (TSV, or a legacy markdown plan) into a real Lawnchair
-.lawnchairbackup file — no root, no manual dragging.
+"""Turn a layout tree (TSV) into a real Lawnchair .lawnchairbackup file —
+no root, no manual dragging.
 
 A .lawnchairbackup is just a zip of:
   launcher.db                     sqlite db, single `favorites` table
@@ -43,11 +43,6 @@ are for human review only, not read back. This is meant to be the source
 of truth — edit it in a spreadsheet, regenerate the backup any time. See
 templates/layout_example.tsv for a starter.
 
-Legacy input: --plan accepts the older Page > Blob > Item markdown format
-(layout_plan.md), where Page 1's leading bullet list (before the first
-"### Blob:") is treated as the dock. Prefer --layout-tsv for anything you
-intend to keep editing/versioning.
-
 Component resolution: for a "perfect" restore (icon shows immediately, no
 re-resolve flicker) each item's intent should point at the app's actual
 launcher Activity, not just its package. If adb + a connected device are
@@ -73,7 +68,6 @@ Backup > Restore > pick it > Layout and settings.
 """
 import argparse
 import csv
-import re
 import shutil
 import sqlite3
 import subprocess
@@ -87,12 +81,7 @@ STATE_DIR = REPO_ROOT / "state"
 APP_INFO_FILE = STATE_DIR / "app_info.tsv"
 LAUNCH_ACTIVITY_FILE = STATE_DIR / "app_launch_activity.tsv"
 
-PAGE_RE = re.compile(r"^##\s+Page\s+(\d+)\b")
-OTHER_H2_RE = re.compile(r"^##\s+(?!Page\s+\d)")
-BLOB_RE = re.compile(r"^###\s+Blob:\s*(.+?)\s*$")
-BULLET_RE = re.compile(r"^-\s+(\S+)")
-
-# Both parsers produce this shape:
+# parse_layout_tsv produces this shape:
 #   dock_groups: [(blob_name_or_None, [pkg, ...], pos_or_None), ...]
 #   pages: {page_num: [(blob_name_or_None, [pkg, ...], pos_or_None), ...]}
 # A group with blob_name=None always holds exactly one item (a standalone
@@ -172,54 +161,6 @@ def parse_layout_tsv(path):
 
     dock_groups = [(name, items, pos) for name, items, pos in containers.pop("dock", [])]
     pages = {p: [(name, items, pos) for name, items, pos in groups] for p, groups in containers.items()}
-    return dock_groups, pages
-
-
-# --------------------------------------------------------------------
-# 1b. Legacy markdown parser (layout_plan.md) — dock has no folder
-# support in this format, every dock row is its own standalone icon.
-# --------------------------------------------------------------------
-
-def parse_plan_markdown(path):
-    dock_items = []
-    pages = {}
-    cur_page = None
-    cur_blob = None
-    in_pages_section = False
-
-    for raw in Path(path).read_text().splitlines():
-        m = PAGE_RE.match(raw)
-        if m:
-            cur_page = int(m.group(1))
-            pages[cur_page] = []
-            cur_blob = None
-            in_pages_section = True
-            continue
-        if OTHER_H2_RE.match(raw):
-            cur_page = None
-            cur_blob = None
-            in_pages_section = False
-            continue
-        if not in_pages_section or cur_page is None:
-            continue
-
-        m = BLOB_RE.match(raw)
-        if m:
-            cur_blob = [m.group(1), []]
-            pages[cur_page].append(cur_blob)
-            continue
-
-        m = BULLET_RE.match(raw)
-        if m:
-            pkg = m.group(1)
-            if cur_blob is not None:
-                cur_blob[1].append(pkg)
-            elif cur_page == 1:
-                dock_items.append(pkg)
-
-    for p in pages:
-        pages[p] = [(name, items, None) for name, items in pages[p]]
-    dock_groups = [(None, [pkg], None) for pkg in dock_items]
     return dock_groups, pages
 
 
@@ -477,9 +418,8 @@ def write_backup(reference_zip, rows, out_path, work_dir):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    src = ap.add_mutually_exclusive_group(required=True)
-    src.add_argument("--layout-tsv", type=Path, help="Official page/blob/pkg TSV (recommended).")
-    src.add_argument("--plan", type=Path, help="Legacy Page>Blob>Item markdown file.")
+    ap.add_argument("--layout-tsv", required=True, type=Path,
+                     help="Official page/blob/pkg TSV — see the module docstring for columns.")
     ap.add_argument("--reference", required=True, type=Path,
                      help="A real .lawnchairbackup exported from the device once, "
                           "used as the template for prefs/schema.")
@@ -496,7 +436,7 @@ def main():
     ap.add_argument("--out", type=Path, default=None)
     args = ap.parse_args()
 
-    src_path = args.layout_tsv or args.plan
+    src_path = args.layout_tsv
     if not src_path.exists():
         sys.exit(f"Layout file not found: {src_path}")
     if not args.reference.exists():
@@ -504,10 +444,7 @@ def main():
 
     out_path = args.out or (STATE_DIR / "migration" / "generated.lawnchairbackup")
 
-    if args.layout_tsv:
-        dock_groups, pages = parse_layout_tsv(src_path)
-    else:
-        dock_groups, pages = parse_plan_markdown(src_path)
+    dock_groups, pages = parse_layout_tsv(src_path)
 
     all_pkgs = set()
     for _, items, _ in dock_groups:

@@ -663,57 +663,54 @@ def step_layout_plan(dest_serial):
         say(f"Looking up {len(pkgs)} app names...")
         names = fetch_app_names(pkgs)
 
-    def label(pkg):
-        name = names.get(pkg, "")
-        return f"{pkg} — {name}" if name else pkg
-
     # Lawnchair's home screen is Page > Blob (a folder is a "blob" of
-    # grouped items) > Item. We can't know your actual grid size or
-    # real categories from here, so this is a starting scaffold, not a
-    # real plan: apps sorted by resolved name (falls back to package
-    # id) and chunked into blobs of BLOB_SIZE, BLOBS_PER_PAGE per page.
-    # Cut/paste items between blobs/pages freely — see the file's own
-    # header for the full disclaimer.
+    # grouped items) > Item. We can't know your actual grid size or real
+    # categories from here, so this is a starting scaffold, not a real
+    # plan: apps sorted by resolved name (falls back to package id) and
+    # chunked into blobs of BLOB_SIZE, BLOBS_PER_PAGE per page. Written
+    # as the official TSV format (page/blob/order/col/row/pkg/name/note)
+    # that build_layout_backup.py reads directly — edit it in a
+    # spreadsheet, reorganize freely, no markdown round-trip needed.
     BLOB_SIZE = 8
     BLOBS_PER_PAGE = 5
     ordered = sorted(pkgs, key=lambda p: (names.get(p) or p).lower())
     blobs = [ordered[i:i + BLOB_SIZE] for i in range(0, len(ordered), BLOB_SIZE)]
 
-    plan_path = MIGRATION_STATE / f"{dest_serial}_layout_plan.md"
+    plan_path = MIGRATION_STATE / f"{dest_serial}_layout.tsv"
     plan_path.parent.mkdir(parents=True, exist_ok=True)
-    lines = [
-        f"# Home screen layout plan — {dest_serial}",
-        "",
-        "Structure: Page > Blob > Item, matching Lawnchair (a \"blob\" here is a folder —",
-        "a group of items that collapses to one icon on the page). Rename/merge/split",
-        "blobs, move items between them, reorder pages, delete anything you don't want",
-        "on the home screen (it stays in the app drawer regardless) — this file is just",
-        "a planning aid, nothing reads it back automatically, since actual icon",
-        "placement can't be scripted without root (see README). The grouping below is",
-        "an alphabetical starting scaffold, not real categories — reorganize freely.",
-        "",
-    ]
+    rows = []
     for page_num, page_start in enumerate(range(0, len(blobs), BLOBS_PER_PAGE), start=1):
         page_blobs = blobs[page_start:page_start + BLOBS_PER_PAGE]
-        lines.append(f"## Page {page_num}")
-        lines.append("")
         for blob_num, blob_items in enumerate(page_blobs, start=1):
-            lines.append(f"### Blob {page_start // BLOB_SIZE + blob_num}")
-            lines.append("")
-            lines += [f"- {label(p)}" for p in blob_items]
-            lines.append("")
-    plan_path.write_text("\n".join(lines).rstrip() + "\n")
+            blob_label = f"Blob {page_start // BLOB_SIZE + blob_num}"
+            for order, pkg in enumerate(blob_items, start=1):
+                rows.append({"page": str(page_num), "blob": blob_label, "order": str(order),
+                             "col": "", "row": "", "pkg": pkg, "name": names.get(pkg, ""),
+                             "note": ""})
+
+    with open(plan_path, "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=["page", "blob", "order", "col", "row", "pkg", "name", "note"],
+                            delimiter="\t", lineterminator="\n")
+        w.writeheader()
+        w.writerows(rows)
 
     say(f"Wrote {plan_path.relative_to(REPO_ROOT)}")
+    say("Alphabetical starting scaffold, not real categories — open it in a spreadsheet")
+    say("(Excel/Numbers/Sheets all handle tab-separated files fine) and reorganize:")
+    say("rename/merge/split blobs by editing the blob column, reorder pages, delete rows")
+    say("for anything you don't want on the home screen (it stays in the app drawer")
+    say("regardless). 'dock' as a page value = the hotseat, shown on every page.")
     input("Edit it now if you like, then press Enter to continue...")
 
     say()
-    say("Manual steps to actually apply the layout in Lawnchair (this part can't be")
-    say("automated without root — see README for why):")
-    say("  1. Open Lawnchair, arrange icons/folders per your edited plan.")
-    say("  2. Once you're happy with it: Lawnchair Settings > Backup > Export, to save")
-    say("     this layout as a real Lawnchair backup file you can restore from later")
-    say("     (e.g. after a factory reset) without redoing the arrangement by hand.")
+    say("To turn this into a real Lawnchair layout — no manual dragging needed:")
+    say("  1. Export a real backup once (Lawnchair Settings > Backup > Export) so there's")
+    say("     a valid template for the non-layout files; move it into state/migration/.")
+    say("  2. python3 scripts/build_layout_backup.py --layout-tsv "
+        f"{plan_path.relative_to(REPO_ROOT)} \\")
+    say(f"       --reference <exported backup> --serial {dest_serial} --cols 5 --rows 5")
+    say("  3. adb push the generated file to /sdcard/Download/, then in Lawnchair:")
+    say("     Settings > Backup > Restore > pick it > Layout and settings.")
 
 
 def main():

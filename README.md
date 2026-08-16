@@ -22,7 +22,7 @@ Requires `python3` (the wizard logic lives in `scripts/wizard.py`). Devices are 
 3. Dry-run debloat (`status`), then asks before applying for real.
 4. If you opted into migration: port apps from the old device — scans both devices, plans the diff, optionally enriches app names from public store listings, then shows a selectable checklist to mark what to port before pulling/installing.
 5. Optionally sets up Lawnchair as the home launcher.
-6. Optionally drafts a home-screen layout plan (`state/migration/<serial>_layout_plan.md`) for you to edit, then walks you through applying it for real in Lawnchair (arranging icons is manual — no API for that without root — but the wizard points you at Lawnchair's own Settings > Backup > Export so you don't have to redo it after a factory reset).
+6. Optionally drafts a home-screen layout tree (`state/migration/<serial>_layout.tsv`) for you to edit in a spreadsheet, then walks you through turning it into a real Lawnchair backup with `build_layout_backup.py` — no manual icon-dragging required (see "Scripting the Lawnchair layout" below).
 
 Ctrl-C at any point is safe — nothing is one-shot-destructive, and re-running `./run.sh` (or the advanced commands below) picks up from whatever state is already saved.
 
@@ -97,21 +97,25 @@ adb -s <serial> push state/migration/<serial>_generated.lawnchairbackup /sdcard/
 # on the phone: Lawnchair > Settings > Backup > Restore > pick the file > Layout and settings
 ```
 
-`<serial>_layout.tsv` is the official, git-tracked source of truth (unlike
-the rest of `state/`, which is gitignored) — columns `page, blob, order,
-pkg, name, note`. `page` is a page number or the literal `dock`; `blob`
-groups rows into a folder (empty = standalone icon); `order` controls
-placement. The dock supports folders too, same as a page — group several
-apps under one dock blob to fit more than one-icon-per-slot. Open it in any
-spreadsheet app to review/reorder, then regenerate the backup any time.
-`--serial` resolves each app's actual launcher Activity via adb for a
-clean, pre-resolved icon (cached in `state/app_launch_activity.tsv`);
-without it, items still work, just via a package-only intent Android
-resolves at tap time. `--cols`/`--rows` (default 5x5) control the
-per-page grid; `--dock-cols`/`--dock-rows` (default: fit / 1) control the
-dock — it'll warn instead of silently overlapping if something doesn't
-fit. `--plan <layout_plan.md>` still works as a legacy markdown input if
-you'd rather not use the TSV.
+`<serial>_layout.tsv` is the only input format and the official,
+git-tracked source of truth (unlike the rest of `state/`, which is
+gitignored) — columns `page, blob, order, col, row, pkg, name, note`.
+`page` is a page number or the literal `dock`; `blob` groups rows into a
+folder (empty = standalone icon); `order` controls placement within a
+group and group order on the page. `col`/`row` are optional — set them
+on any row of a group to pin that folder/icon to an exact grid cell
+(0-indexed), matching a real screenshot's layout; leave blank and it
+auto-fills the remaining free cells. The dock supports folders too, same
+as a page — group several apps under one dock blob to fit more than
+one-icon-per-slot. Open the TSV in any spreadsheet app (Excel/Numbers/
+Sheets all read tab-separated files fine) to review/reorder, then
+regenerate the backup any time. `--serial` resolves each app's actual
+launcher Activity via adb for a clean, pre-resolved icon (cached in
+`state/app_launch_activity.tsv`); without it, items still work, just via
+a package-only intent Android resolves at tap time. `--cols`/`--rows`
+(default 5x5) control the per-page grid; `--dock-cols`/`--dock-rows`
+(default: fit / 1) control the dock — it'll warn instead of silently
+overlapping if something doesn't fit.
 
 ## Layout
 
@@ -122,7 +126,7 @@ scripts/
   devices.sh                      device label/role registry + catalog template picker
   debloat.sh                      declarative debloat reconciler
   migrate.sh                      multipass app migration
-  build_layout_backup.py          scripts a .lawnchairbackup from layout_plan.md (no root)
+  build_layout_backup.py          scripts a .lawnchairbackup from <serial>_layout.tsv (no root)
   lib/resolve_device.sh           shared device/catalog resolution, sourced by the above
 templates/*.tsv                 debloat catalog templates, one per device model (versioned)
 state/                          ALL generated/local files live here — gitignored, per-machine
