@@ -34,8 +34,8 @@ dock	LLM Assistants	4			com.google.android.apps.bard		Gemini
 1	Photos	2			com.miui.gallery		MIUI Gallery
 1	Photos	3			com.lemon.lvoverseas		CapCut
 1		1			com.google.android.contacts		Contacts - standalone, pairs with dock Phone/SMS
-1	Mail	1			com.google.android.gm		Gmail
-1	Mail	2			ru.yandex.mail		Yandex Mail
+dock	Messengers	6			com.google.android.gm		Gmail
+dock	Messengers	7			ru.yandex.mail		Yandex Mail
 dock	Messengers	2			org.jitsi.meet		
 dock	Messengers	3			us.zoom.videomeetings		
 dock	Messengers	4			ru.yandex.telemost		
@@ -50,7 +50,7 @@ dock	Messengers	5			com.microsoft.office.lync15
 1	Music & Video	2			com.soundcloud.android		
 1	Music & Video	3			com.uma.musicvk		VK Music
 1	Music & Video	4			com.miui.fm		
-1	Music & Video	5			com.google.android.youtube		YouTube - was missing entirely before
+2	Entertainment	4			com.google.android.youtube		YouTube
 1	Health & Fitness	1			com.xiaomi.hm.health		Zepp Life (renamed - this is Zepp Life, formerly Mi Fit)
 1	Health & Fitness	2			com.google.android.apps.fitness		Google Fit
 1	Health & Fitness	3			com.strava		
@@ -115,7 +115,7 @@ dock	Messengers	5			com.microsoft.office.lync15
 2	Business	1			ru.zhuck.webapp		Tochka Bank
 2	Business	2			ru.vtb.smb		VTB for business
 2	Business	3			ru.tinkoff.sme		Tinkoff for business
-2	Investment	1			ru.tinkoff.investing		Tinkoff Investing
+1	Broker	3			ru.tinkoff.investing		Tinkoff Investing (T-Invest) - broker
 2	Insurance	1			ru.reso.osago		
 2	Insurance	2			ru.alfastrah.app		
 2	Pay RU	1			ru.nspk.mir.loyalty		
