@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Turn a hand-edited layout_plan.md into a real Lawnchair .lawnchairbackup
-file — no root, no manual dragging.
+"""Turn a layout tree (TSV, or a legacy markdown plan) into a real Lawnchair
+.lawnchairbackup file — no root, no manual dragging.
 
 A .lawnchairbackup is just a zip of:
   launcher.db                     sqlite db, single `favorites` table
@@ -13,18 +13,36 @@ A .lawnchairbackup is just a zip of:
 This script takes a REFERENCE backup (export one for real from Lawnchair
 once — Settings > Backup > Export — so we have a valid template for the
 non-layout files and the exact favorites schema/pragmas) and replaces its
-favorites rows with ones generated from layout_plan.md's Page > Blob > Item
-structure:
-  - Page 1's leading bullet list (before the first "### Blob:") -> hotseat
-    (container -101), one per dock slot.
-  - Every other "## Page N" -> one workspace screen (container -100,
-    screen = N-1), row-major grid.
-  - Each "### Blob:" with 2+ items -> a folder icon on that page; single-item
-    blobs are placed as a plain icon instead (no point in a 1-item folder).
-  - "## Unsorted" is skipped entirely — resolve those by hand first.
+favorites rows with ones generated from the layout tree:
 
-Component resolution: for a "perfect" restore (icon shows immediately,
-no re-resolve flicker) each item's intent should point at the app's actual
+  - Rows with page=dock -> the hotseat/dock row (container -101), frozen
+    across every page, one item per row in `order`.
+  - Rows with page=1,2,3... and no blob -> a plain top-level icon directly
+    on that workspace screen (container -100, screen = page-1).
+  - Rows sharing the same (page, blob) -> a folder icon on that page named
+    `blob`; single-item groups collapse to a plain icon (no 1-item
+    folders). Items inside a folder are laid out row-major in `order`.
+
+Official input format — a TSV with columns:
+    page    blob    order   pkg                 name            note
+    dock            1       app.hiddify.com     Hiddify         VPN
+    1               1       app.hiddify.com     Hiddify
+    1       Social  1       com.vkontakte.android   VK
+    1       Social  2       com.vk.vkvideo      VK Video
+
+`page` is an integer, or the literal `dock`. `blob` empty = standalone icon.
+`order` sorts items within their (page, blob) group and groups within a
+page. `name`/`note` are for human review only, not read back. This is
+meant to be the source of truth — edit it in a spreadsheet, regenerate the
+backup any time. See templates/layout_example.tsv for a starter.
+
+Legacy input: --plan accepts the older Page > Blob > Item markdown format
+(layout_plan.md), where Page 1's leading bullet list (before the first
+"### Blob:") is treated as the dock. Prefer --layout-tsv for anything you
+intend to keep editing/versioning.
+
+Component resolution: for a "perfect" restore (icon shows immediately, no
+re-resolve flicker) each item's intent should point at the app's actual
 launcher Activity, not just its package. If adb + a connected device are
 available, this script resolves it live via
 `adb shell cmd package resolve-activity`. Results are cached in
@@ -37,10 +55,10 @@ pre-resolved.
 
 Usage:
     python3 scripts/build_layout_backup.py \\
-        --plan state/migration/<serial>_layout_plan.md \\
-        --reference "state/Lawnchair_Backup ....lawnchairbackup" \\
+        --layout-tsv state/migration/<serial>_layout.tsv \\
+        --reference "state/migration/<exported backup>.lawnchairbackup" \\
         --serial <serial> \\
-        [--cols 5] [--rows 6] [--hotseat 4] \\
+        [--cols 5] [--rows 5] \\
         [--out state/migration/<serial>_generated.lawnchairbackup]
 
 Then: adb push the output to /sdcard/Download/ and in Lawnchair, Settings >
@@ -67,13 +85,77 @@ OTHER_H2_RE = re.compile(r"^##\s+(?!Page\s+\d)")
 BLOB_RE = re.compile(r"^###\s+Blob:\s*(.+?)\s*$")
 BULLET_RE = re.compile(r"^-\s+(\S+)")
 
+# Both parsers produce this shape:
+#   dock_items: [pkg, ...]
+#   pages: {page_num: [(blob_name_or_None, [pkg, ...]), ...]}
+# A group with blob_name=None always holds exactly one item (a standalone
+# icon); a group with a real blob_name holds 1+ items (1 collapses to a
+# plain icon at build time, same as a None group).
+
 
 # --------------------------------------------------------------------
-# 1. Parse layout_plan.md into {page_num: {"hotseat": [pkg,...] (page1
-#    only), "blobs": [(blob_name, [pkg,...]), ...]}}
+# 1a. Parse the official layout TSV
 # --------------------------------------------------------------------
 
-def parse_plan(path):
+def parse_layout_tsv(path):
+    with open(path, newline="") as f:
+        rows = list(csv.DictReader(f, delimiter="\t"))
+
+    def sort_key(i_r):
+        i, r = i_r
+        try:
+            order = int((r.get("order") or "0").strip())
+        except ValueError:
+            order = 0
+        return (order, i)
+
+    rows = [r for _, r in sorted(enumerate(rows), key=sort_key)]
+
+    dock_items = []
+    pages = {}
+    group_index = {}
+    standalone_counter = 0
+
+    for r in rows:
+        pkg = (r.get("pkg") or "").strip()
+        if not pkg:
+            continue
+        page_raw = (r.get("page") or "").strip()
+        blob = (r.get("blob") or "").strip()
+
+        if page_raw.lower() == "dock":
+            dock_items.append(pkg)
+            continue
+
+        try:
+            page_num = int(page_raw)
+        except ValueError:
+            print(f"WARNING: skipping row with unrecognized page {page_raw!r} (pkg={pkg})")
+            continue
+
+        pages.setdefault(page_num, [])
+        if blob:
+            key = (page_num, blob)
+        else:
+            standalone_counter += 1
+            key = (page_num, "__standalone__", standalone_counter)
+        if key not in group_index:
+            pages[page_num].append([blob or None, []])
+            group_index[key] = len(pages[page_num]) - 1
+        pages[page_num][group_index[key]][1].append(pkg)
+
+    for p in pages:
+        pages[p] = [(name, items) for name, items in pages[p]]
+
+    return dock_items, pages
+
+
+# --------------------------------------------------------------------
+# 1b. Legacy markdown parser (layout_plan.md)
+# --------------------------------------------------------------------
+
+def parse_plan_markdown(path):
+    dock_items = []
     pages = {}
     cur_page = None
     cur_blob = None
@@ -83,12 +165,11 @@ def parse_plan(path):
         m = PAGE_RE.match(raw)
         if m:
             cur_page = int(m.group(1))
-            pages[cur_page] = {"hotseat": [], "blobs": []}
+            pages[cur_page] = []
             cur_blob = None
             in_pages_section = True
             continue
         if OTHER_H2_RE.match(raw):
-            # "## Unsorted" or anything else -> stop attributing bullets
             cur_page = None
             cur_blob = None
             in_pages_section = False
@@ -98,8 +179,8 @@ def parse_plan(path):
 
         m = BLOB_RE.match(raw)
         if m:
-            cur_blob = (m.group(1), [])
-            pages[cur_page]["blobs"].append(cur_blob)
+            cur_blob = [m.group(1), []]
+            pages[cur_page].append(cur_blob)
             continue
 
         m = BULLET_RE.match(raw)
@@ -107,13 +188,12 @@ def parse_plan(path):
             pkg = m.group(1)
             if cur_blob is not None:
                 cur_blob[1].append(pkg)
-            else:
-                # bullets appearing before any "### Blob:" heading on a page
-                # -> hotseat candidates (only meaningful for page 1, but we
-                # honor it wherever it appears)
-                pages[cur_page]["hotseat"].append(pkg)
+            elif cur_page == 1:
+                dock_items.append(pkg)
 
-    return pages
+    for p in pages:
+        pages[p] = [(name, items) for name, items in pages[p]]
+    return dock_items, pages
 
 
 # --------------------------------------------------------------------
@@ -249,34 +329,32 @@ class RowBuilder:
         return True
 
 
-def build_favorites(pages, names, activities, cols, rows, hotseat_slots):
+def build_favorites(dock_items, pages, names, activities, cols, rows, hotseat_slots=None):
     now_ms = int(time.time() * 1000)
     rb = RowBuilder(names, activities, now_ms)
     overflow_warnings = []
 
+    slots = hotseat_slots if hotseat_slots is not None else len(dock_items)
+    for i, pkg in enumerate(dock_items[:slots]):
+        rb.add_app(pkg, -101, 0, i, 0, rank=i)
+    if len(dock_items) > slots:
+        overflow_warnings.append(
+            f"Dock has {len(dock_items)} apps, only {slots} slots (--hotseat) — "
+            f"extras dropped (still placed if they also appear on a page).")
+
     for page_num in sorted(pages):
-        info = pages[page_num]
+        groups = pages[page_num]
         screen = page_num - 1
-
-        if page_num == 1 and info["hotseat"]:
-            for i, pkg in enumerate(info["hotseat"][:hotseat_slots]):
-                rb.add_app(pkg, -101, 0, i, 0, rank=i)
-            if len(info["hotseat"]) > hotseat_slots:
-                overflow_warnings.append(
-                    f"Page 1 hotseat list has {len(info['hotseat'])} apps, "
-                    f"only {hotseat_slots} dock slots — extras dropped "
-                    f"(they're still placed via their blob if listed there too).")
-
         cell_idx = 0
         capacity = cols * rows
-        for blob_name, items in info["blobs"]:
+        for blob_name, items in groups:
             items = [p for p in items if p not in rb.placed_packages]
             if not items:
                 continue
             if cell_idx >= capacity:
                 overflow_warnings.append(
                     f"Page {page_num}: ran out of grid space ({cols}x{rows}={capacity} "
-                    f"cells) before placing blob '{blob_name}' — bump --cols/--rows "
+                    f"cells) before placing '{blob_name or items[0]}' — bump --cols/--rows "
                     f"or trim this page.")
                 break
             cx, cy = cell_idx % cols, cell_idx // cols
@@ -329,7 +407,9 @@ def write_backup(reference_zip, rows, out_path, work_dir):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--plan", required=True, type=Path)
+    src = ap.add_mutually_exclusive_group(required=True)
+    src.add_argument("--layout-tsv", type=Path, help="Official page/blob/pkg TSV (recommended).")
+    src.add_argument("--plan", type=Path, help="Legacy Page>Blob>Item markdown file.")
     ap.add_argument("--reference", required=True, type=Path,
                      help="A real .lawnchairbackup exported from the device once, "
                           "used as the template for prefs/schema.")
@@ -337,26 +417,32 @@ def main():
                      help="ADB serial, for live launcher-activity resolution. "
                           "Omit to skip resolution (falls back to package-only intents).")
     ap.add_argument("--cols", type=int, default=5)
-    ap.add_argument("--rows", type=int, default=6)
-    ap.add_argument("--hotseat", type=int, default=4)
+    ap.add_argument("--rows", type=int, default=5)
+    ap.add_argument("--hotseat", type=int, default=None,
+                     help="Dock slot cap. Defaults to however many dock rows the layout has.")
     ap.add_argument("--out", type=Path, default=None)
     args = ap.parse_args()
 
-    if not args.plan.exists():
-        sys.exit(f"Plan file not found: {args.plan}")
+    src_path = args.layout_tsv or args.plan
+    if not src_path.exists():
+        sys.exit(f"Layout file not found: {src_path}")
     if not args.reference.exists():
         sys.exit(f"Reference backup not found: {args.reference}")
 
     out_path = args.out or (STATE_DIR / "migration" / "generated.lawnchairbackup")
 
-    pages = parse_plan(args.plan)
-    all_pkgs = set()
-    for info in pages.values():
-        all_pkgs.update(info["hotseat"])
-        for _, items in info["blobs"]:
+    if args.layout_tsv:
+        dock_items, pages = parse_layout_tsv(src_path)
+    else:
+        dock_items, pages = parse_plan_markdown(src_path)
+
+    all_pkgs = set(dock_items)
+    for groups in pages.values():
+        for _, items in groups:
             all_pkgs.update(items)
 
-    print(f"Parsed {len(pages)} page(s), {len(all_pkgs)} unique package(s) from {args.plan.name}")
+    print(f"Parsed {len(pages)} page(s), {len(dock_items)} dock item(s), "
+          f"{len(all_pkgs)} unique package(s) from {src_path.name}")
 
     names = load_app_names()
     activities = load_launch_activity_cache()
@@ -377,7 +463,8 @@ def main():
 
     activities = {k: v for k, v in activities.items() if v}
 
-    rows, warnings = build_favorites(pages, names, activities, args.cols, args.rows, args.hotseat)
+    rows, warnings = build_favorites(dock_items, pages, names, activities,
+                                      args.cols, args.rows, args.hotseat)
     print(f"Built {len(rows)} favorites row(s).")
     for w in warnings:
         print(f"WARNING: {w}")
