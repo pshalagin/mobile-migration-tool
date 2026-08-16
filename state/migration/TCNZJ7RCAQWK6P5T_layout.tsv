@@ -7,13 +7,13 @@ dock	LLM Assistants	1			com.openai.chatgpt
 dock	LLM Assistants	2			com.anthropic.claude		
 dock	LLM Assistants	3			com.deepseek.chat		
 dock	LLM Assistants	4			com.google.android.apps.bard		Gemini
-dock	Payment	1			com.google.android.apps.walletnfcrel		
-dock	Finance	1			com.mobile.bitkogan		
-dock	Finance	2			com.tradingview.tradingviewapp		
-dock	Finance	3			com.coinmarketcap.android		
-dock	Finance	4			com.yahoo.mobile.client.android.finance		
-dock	Crypto	1			org.montelibero.sunce		Sunce Wallet (Stellar crypto)
-dock	Payment	2			atws.app		IBKR Mobile
+1	Payment	1			com.google.android.apps.walletnfcrel		
+1	Finance	1			com.mobile.bitkogan		
+1	Finance	2			com.tradingview.tradingviewapp		
+1	Finance	3			com.coinmarketcap.android		
+1	Finance	4			com.yahoo.mobile.client.android.finance		
+1	Crypto	1			org.montelibero.sunce		Sunce Wallet (Stellar crypto)
+1	Broker	1			atws.app		IBKR Mobile - broker
 1	Productivity & Docs	1			com.google.android.apps.docs.editors.sheets		
 1	Productivity & Docs	2			com.google.android.apps.docs.editors.slides		
 1	Productivity & Docs	3			com.google.android.keep		
@@ -104,14 +104,14 @@ dock	Messengers	5			com.microsoft.office.lync15
 2	Bank	1			ru.sberbankmobile		
 2	Bank	2			ru.sberbank_sbbol		
 2	Bank	3			ru.alfabank.mobile.android		
-2	Bank	4			ru.alfadirect.app		
-2	Bank	5			ru.akbars.mobile		
-2	Bank	6			ru.gazprombank.android.mobilebank.app		
-2	Bank	7			ru.vtb24.mobilebanking.android		
-2	Bank	8			com.idamob.tinkoff.android		
-2	Bank	9			com.idamobile.android.crediteuropa		
-2	Bank	10			ru.banki.banki		
-2	Bank	11			ru.raiffeisennews		
+1	Broker	2			ru.alfadirect.app		Alfa-Direct - broker
+2	Bank	4			ru.akbars.mobile		
+2	Bank	5			ru.gazprombank.android.mobilebank.app		
+2	Bank	6			ru.vtb24.mobilebanking.android		
+2	Bank	7			com.idamob.tinkoff.android		
+2	Bank	8			com.idamobile.android.crediteuropa		
+2	Bank	9			ru.banki.banki		
+2	Bank	10			ru.raiffeisennews		
 2	Business	1			ru.zhuck.webapp		Tochka Bank
 2	Business	2			ru.vtb.smb		VTB for business
 2	Business	3			ru.tinkoff.sme		Tinkoff for business
@@ -215,18 +215,18 @@ dock	Messengers	5			com.microsoft.office.lync15
 2	Marketplace	3			ru.aliexpress.buyer		AliExpress
 2	Marketplace	4			com.avito.android		Avito
 2	Marketplace	5			ru.beru.android		legacy Yandex Market app id - likely superseded, check if still used
-2	Entertainment	1			com.vkontakte.android		VK - moved here to match your RU Entertainment grouping
-2	Entertainment	2			com.vk.vkvideo		VK Video
-2	Entertainment	3			ru.ok.android		Odnoklassniki
-2	Entertainment	4			ru.kinopoisk		Kinopoisk
-2	Entertainment	5			ru.ivi.client		ivi
+2	Social Networks	1			com.vkontakte.android		VK
+2	Entertainment	1			com.vk.vkvideo		VK Video
+2	Social Networks	2			ru.ok.android		Odnoklassniki
+2	Entertainment	2			ru.kinopoisk		Kinopoisk
+2	Entertainment	3			ru.ivi.client		ivi
 3	Bank	1			kg.bta.mobilebank2		BTA Bank
 3	Bank	2			kz.kaspi.mobile		Kaspi.kz
 3	Bank	3			com.maanavan.mb_kyrgyzstan		MBANK
 3	Bank	4			kg.beeline.odp		
 3	Bank	5			kz.beeline.odp		
 3	Bank	6			com.intervale.baitushum		Baitushum
-3	Marketplace	1			com.kazanexpress.ke_app		Kazan Express
+2	Marketplace	6			com.kazanexpress.ke_app		Kazan Express - Russian marketplace
 3	Government	1			kz.mobile.mgov		
 3	Government	2			kz.mobile.mgov.business		
 3	Government	3			com.qazeta		QazETA
