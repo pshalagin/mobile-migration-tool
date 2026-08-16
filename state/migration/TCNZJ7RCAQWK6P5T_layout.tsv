@@ -231,5 +231,5 @@ dock	LLM Assistants	4	com.google.android.apps.bard		Gemini — newly found
 dock	Payment	6	org.montelibero.sunce		Sunce Wallet (Stellar crypto)
 dock	Payment	7	atws.app		IBKR Mobile (Interactive Brokers)
 2	Banking & Payments — Russia	4	ru.zhuck.webapp		Tochka Bank (business banking)
-1	Review Later	1	com.mrsapp.platform		unidentified — possibly your own mrs-app project
 1	Review Later	2	com.kdfapp.prod		unidentified — no match found via search either
+4		1	com.mrsapp.platform		your own app in dev — dedicated last page
