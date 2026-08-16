@@ -61,7 +61,13 @@ Usage:
         --reference "state/migration/<exported backup>.lawnchairbackup" \\
         --serial <serial> \\
         [--cols 5] [--rows 5] \\
+        [--reserve-row 1:0 ...] \\
         [--out state/migration/<serial>_generated.lawnchairbackup]
+
+--reserve-row PAGE:ROW (repeatable) blocks a whole row on a page from
+auto-placement — for a home-screen widget (clock, weather, etc.) that
+takes up grid space but isn't a layout-tsv item. Doesn't affect explicit
+col/row pins, only where unpinned groups get auto-filled.
 
 Then: adb push the output to /sdcard/Download/ and in Lawnchair, Settings >
 Backup > Restore > pick it > Layout and settings.
