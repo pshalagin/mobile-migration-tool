@@ -129,10 +129,19 @@ scripts/
   build_layout_backup.py          scripts a .lawnchairbackup from <serial>_layout.tsv (no root)
   lib/resolve_device.sh           shared device/catalog resolution, sourced by the above
 templates/*.tsv                 debloat catalog templates, one per device model (versioned)
-state/                          ALL generated/local files live here — gitignored, per-machine
+state/                          ALL generated/local files live here — gitignored except as noted
   devices.tsv                     device registry, keyed by ADB serial: serial, model, catalog, role
   catalogs/<serial>.tsv           per-device live catalog, seeded from a template at init
-  migration/                      migrate.sh working files, incl. layout plans
+  app_info.tsv                    shared cache: package -> real app name/description/source (migrate.sh enrich + wizard.py layout planner)
+  app_launch_activity.tsv         shared cache: package -> resolved launcher Activity (build_layout_backup.py)
+  migration/                      migrate.sh + layout tooling working files
+    migration_config.txt            per-app PORT/SKIP decisions, hand-edited between `migrate.sh plan` and `pull`
+    old_packages.tsv                scan-old output
+    new_packages.txt                scan-new output
+    apk_transfer/                   pulled APKs staged for install (large; safe to delete and re-pull)
+    <serial>_layout.tsv             curated home-screen layout tree — the one file under state/ that IS git-tracked
+    <serial>_reference.lawnchairbackup   a real exported Lawnchair backup, used as the schema/settings template by build_layout_backup.py
+    <serial>_generated.lawnchairbackup   build_layout_backup.py output, ready to adb push + restore (regenerate any time, not tracked)
 ```
 
 ## Credits
