@@ -25,17 +25,23 @@ favorites rows with ones generated from the layout tree:
     folders). Items inside a folder are laid out row-major in `order`.
 
 Official input format — a TSV with columns:
-    page    blob    order   pkg                 name            note
-    dock            1       app.hiddify.com     Hiddify         VPN
-    1               1       app.hiddify.com     Hiddify
-    1       Social  1       com.vkontakte.android   VK
-    1       Social  2       com.vk.vkvideo      VK Video
+    page    blob    order   col   row   pkg                 name       note
+    dock            1                   app.hiddify.com     Hiddify    VPN
+    1               1                   app.hiddify.com     Hiddify
+    1       Social  1       0     0     com.vkontakte.android   VK
+    1       Social  2               com.vk.vkvideo      VK Video
 
 `page` is an integer, or the literal `dock`. `blob` empty = standalone icon.
 `order` sorts items within their (page, blob) group and groups within a
-page. `name`/`note` are for human review only, not read back. This is
-meant to be the source of truth — edit it in a spreadsheet, regenerate the
-backup any time. See templates/layout_example.tsv for a starter.
+page. `col`/`row` are OPTIONAL and pin that whole group (folder or
+standalone icon) to an exact grid cell — set them on any one row of the
+group (0-indexed: col 0 is leftmost, row 0 is topmost). Leave blank for
+everything else and it auto-fills the remaining free cells in `order`.
+Pinned cells are reserved first; if two groups collide on the same cell,
+the later one falls back to auto-placement with a warning. `name`/`note`
+are for human review only, not read back. This is meant to be the source
+of truth — edit it in a spreadsheet, regenerate the backup any time. See
+templates/layout_example.tsv for a starter.
 
 Legacy input: --plan accepts the older Page > Blob > Item markdown format
 (layout_plan.md), where Page 1's leading bullet list (before the first
@@ -87,12 +93,13 @@ BLOB_RE = re.compile(r"^###\s+Blob:\s*(.+?)\s*$")
 BULLET_RE = re.compile(r"^-\s+(\S+)")
 
 # Both parsers produce this shape:
-#   dock_groups: [(blob_name_or_None, [pkg, ...]), ...]   # dock supports
-#                                                          # folders too
-#   pages: {page_num: [(blob_name_or_None, [pkg, ...]), ...]}
+#   dock_groups: [(blob_name_or_None, [pkg, ...], pos_or_None), ...]
+#   pages: {page_num: [(blob_name_or_None, [pkg, ...], pos_or_None), ...]}
 # A group with blob_name=None always holds exactly one item (a standalone
 # icon); a group with a real blob_name holds 1+ items (1 collapses to a
-# plain icon at build time, same as a None group).
+# plain icon at build time, same as a None group). pos, if set, is an
+# (col, row) tuple pinning that group to an exact grid cell — dock
+# supports folders AND pinned positions exactly like a page does.
 
 
 # --------------------------------------------------------------------
@@ -119,12 +126,23 @@ def parse_layout_tsv(path):
     group_index = {}
     standalone_counter = 0
 
+    def parse_int(v):
+        v = (v or "").strip()
+        if not v:
+            return None
+        try:
+            return int(v)
+        except ValueError:
+            return None
+
     for r in rows:
         pkg = (r.get("pkg") or "").strip()
         if not pkg:
             continue
         page_raw = (r.get("page") or "").strip()
         blob = (r.get("blob") or "").strip()
+        col = parse_int(r.get("col"))
+        row = parse_int(r.get("row"))
 
         if page_raw.lower() == "dock":
             key_page = "dock"
@@ -142,12 +160,15 @@ def parse_layout_tsv(path):
             standalone_counter += 1
             key = (key_page, "__standalone__", standalone_counter)
         if key not in group_index:
-            containers[key_page].append([blob or None, []])
+            containers[key_page].append([blob or None, [], None])
             group_index[key] = len(containers[key_page]) - 1
-        containers[key_page][group_index[key]][1].append(pkg)
+        g = containers[key_page][group_index[key]]
+        g[1].append(pkg)
+        if g[2] is None and col is not None and row is not None:
+            g[2] = (col, row)
 
-    dock_groups = [(name, items) for name, items in containers.pop("dock", [])]
-    pages = {p: [(name, items) for name, items in groups] for p, groups in containers.items()}
+    dock_groups = [(name, items, pos) for name, items, pos in containers.pop("dock", [])]
+    pages = {p: [(name, items, pos) for name, items, pos in groups] for p, groups in containers.items()}
     return dock_groups, pages
 
 
@@ -194,8 +215,8 @@ def parse_plan_markdown(path):
                 dock_items.append(pkg)
 
     for p in pages:
-        pages[p] = [(name, items) for name, items in pages[p]]
-    dock_groups = [(None, [pkg]) for pkg in dock_items]
+        pages[p] = [(name, items, None) for name, items in pages[p]]
+    dock_groups = [(None, [pkg], None) for pkg in dock_items]
     return dock_groups, pages
 
 
@@ -332,32 +353,69 @@ class RowBuilder:
         return True
 
 
+def _place_one(rb, container, screen, blob_name, items, cx, cy):
+    if len(items) == 1:
+        rb.add_app(items[0], container, screen, cx, cy)
+    else:
+        folder_id = rb.add_folder(blob_name, container, screen, cx, cy)
+        for i, pkg in enumerate(items):
+            rb.add_folder_item(pkg, folder_id, i)
+
+
 def place_groups(rb, groups, container, screen, cols, rows_cap, label):
-    """Row-major placement of (blob_name_or_None, [pkgs]) groups into a
+    """Placement of (blob_name_or_None, [pkgs], pos_or_None) groups into a
     cols x rows_cap grid on the given container/screen. Shared by both
     the dock (container -101, typically rows_cap=1) and workspace pages
     (container -100, one call per page) — a folder and a dock both just
-    need "N group slots on a grid", the only difference is capacity."""
+    need "N group slots on a grid", the only difference is capacity.
+
+    Two passes: groups with an explicit (col, row) claim that exact cell
+    first; everything else fills the remaining free cells in order,
+    skipping whatever's already taken."""
     warnings = []
-    cell_idx = 0
     capacity = cols * rows_cap
-    for blob_name, items in groups:
+    occupied = set()
+    auto_groups = []
+
+    for blob_name, items, pos in groups:
         items = [p for p in items if p not in rb.placed_packages]
         if not items:
             continue
-        if cell_idx >= capacity:
+        if pos is None:
+            auto_groups.append((blob_name, items))
+            continue
+        cx, cy = pos
+        if not (0 <= cx < cols and 0 <= cy < rows_cap):
+            warnings.append(
+                f"{label}: pinned position {pos} for '{blob_name or items[0]}' is outside "
+                f"the {cols}x{rows_cap} grid — falling back to auto-placement.")
+            auto_groups.append((blob_name, items))
+            continue
+        if (cx, cy) in occupied:
+            warnings.append(
+                f"{label}: pinned position {pos} for '{blob_name or items[0]}' is already "
+                f"taken by another pinned group — falling back to auto-placement.")
+            auto_groups.append((blob_name, items))
+            continue
+        occupied.add((cx, cy))
+        _place_one(rb, container, screen, blob_name, items, cx, cy)
+
+    cell_idx = 0
+    for blob_name, items in auto_groups:
+        placed = False
+        while cell_idx < capacity:
+            cx, cy = cell_idx % cols, cell_idx // cols
+            cell_idx += 1
+            if (cx, cy) in occupied:
+                continue
+            occupied.add((cx, cy))
+            _place_one(rb, container, screen, blob_name, items, cx, cy)
+            placed = True
+            break
+        if not placed:
             warnings.append(
                 f"{label}: ran out of grid space ({cols}x{rows_cap}={capacity} cells) "
                 f"before placing '{blob_name or items[0]}' — bump capacity or trim.")
-            break
-        cx, cy = cell_idx % cols, cell_idx // cols
-        if len(items) == 1:
-            rb.add_app(items[0], container, screen, cx, cy)
-        else:
-            folder_id = rb.add_folder(blob_name, container, screen, cx, cy)
-            for i, pkg in enumerate(items):
-                rb.add_folder_item(pkg, folder_id, i)
-        cell_idx += 1
     return warnings
 
 
@@ -449,13 +507,13 @@ def main():
         dock_groups, pages = parse_plan_markdown(src_path)
 
     all_pkgs = set()
-    for _, items in dock_groups:
+    for _, items, _ in dock_groups:
         all_pkgs.update(items)
     for groups in pages.values():
-        for _, items in groups:
+        for _, items, _ in groups:
             all_pkgs.update(items)
 
-    dock_item_count = sum(len(items) for _, items in dock_groups)
+    dock_item_count = sum(len(items) for _, items, _ in dock_groups)
     print(f"Parsed {len(pages)} page(s), {len(dock_groups)} dock group(s) "
           f"({dock_item_count} app(s)), {len(all_pkgs)} unique package(s) from {src_path.name}")
 
