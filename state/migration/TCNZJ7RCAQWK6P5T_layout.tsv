@@ -13,7 +13,7 @@ dock	LLM Assistants	4			com.google.android.apps.bard		Gemini
 1	Finance	3			com.coinmarketcap.android		
 1	Finance	4			com.yahoo.mobile.client.android.finance		
 1	Crypto	1			org.montelibero.sunce		Sunce Wallet (Stellar crypto)
-1	Broker	1			atws.app		IBKR Mobile - broker
+3	Broker	1			atws.app		IBKR Mobile - broker
 1	Productivity & Docs	1	2	1	com.google.android.apps.docs.editors.sheets		
 1	Productivity & Docs	2			com.google.android.apps.docs.editors.slides		
 1	Productivity & Docs	3			com.google.android.keep		
@@ -104,7 +104,7 @@ dock	Messengers	5			com.microsoft.office.lync15
 2	Bank	1	1	0	ru.sberbankmobile		
 2	Bank	2			ru.sberbank_sbbol		
 2	Bank	3			ru.alfabank.mobile.android		
-1	Broker	2			ru.alfadirect.app		Alfa-Direct - broker
+2	Broker	1			ru.alfadirect.app		Alfa-Direct - broker
 2	Bank	4			ru.akbars.mobile		
 2	Bank	5			ru.gazprombank.android.mobilebank.app		
 2	Bank	6			ru.vtb24.mobilebanking.android		
@@ -115,7 +115,7 @@ dock	Messengers	5			com.microsoft.office.lync15
 2	Business	1	2	0	ru.zhuck.webapp		Tochka Bank
 2	Business	2			ru.vtb.smb		VTB for business
 2	Business	3			ru.tinkoff.sme		Tinkoff for business
-1	Broker	3			ru.tinkoff.investing		Tinkoff Investing (T-Invest) - broker
+2	Broker	2			ru.tinkoff.investing		Tinkoff Investing (T-Invest) - broker
 2	Insurance	1	4	0	ru.reso.osago		
 2	Insurance	2			ru.alfastrah.app		
 2	Pay RU	1			ru.nspk.mir.loyalty		
