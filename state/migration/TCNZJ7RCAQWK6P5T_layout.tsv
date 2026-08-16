@@ -1,0 +1,187 @@
+page	blob	order	pkg	name	note
+dock	LLM Assistants	1	com.openai.chatgpt		
+dock	LLM Assistants	2	com.anthropic.claude		
+dock	LLM Assistants	3	com.deepseek.chat		
+dock	Payment	1	com.google.android.apps.walletnfcrel		
+dock	Payment	2	com.mobile.bitkogan		
+dock	Payment	3	com.tradingview.tradingviewapp		
+dock	Payment	4	com.coinmarketcap.android		
+dock	Payment	5	com.yahoo.mobile.client.android.finance		
+1	Productivity & Docs	1	com.google.android.apps.docs.editors.sheets		
+1	Productivity & Docs	1	com.google.android.apps.docs.editors.slides		
+1	Productivity & Docs	1	com.google.android.keep		
+1	Productivity & Docs	1	com.miui.notes		
+1	Productivity & Docs	1	net.gsantner.markor		
+1	Productivity & Docs	1	com.adobe.reader		
+1	Productivity & Docs	1	com.adobe.scan.android		
+1	Productivity & Docs	1	com.kursx.smartbook		
+1	Productivity & Docs	1	org.geometerplus.zlibrary.ui.android		
+1	Productivity & Docs	1	com.dropbox.android		
+1	Productivity & Docs	1	ru.yandex.disk		
+1	Productivity & Docs	1	com.trello		
+1	Productivity & Docs	1	com.github.android		
+1	Productivity & Docs	1	io.coda.codaapp		
+1	Chats & Video Calls	2	org.jitsi.meet		
+1	Chats & Video Calls	2	us.zoom.videomeetings		
+1	Chats & Video Calls	2	ru.yandex.telemost		
+1	Chats & Video Calls	2	com.microsoft.office.lync15		
+1	Chats & Video Calls	2	chat.delta		
+1	VPNs	3	app.hiddify.com		
+1	Translation	4	com.google.android.apps.translate		
+1	Translation	4	com.softissimo.reverso.context		
+1	Translation	4	ru.poas.learn.japanese.jlpt.katakana.kana.hiragana.kanji.romaji		
+1	Translation	4	ru.poas.turkishwords		
+1	Social & Video	5	com.vkontakte.android		
+1	Social & Video	5	com.vk.vkvideo		
+1	Social & Video	5	ru.ok.android		
+1	Social & Video	5	ru.kinopoisk		
+1	Social & Video	5	ru.ivi.client		
+1	Music	6	ru.yandex.music		
+1	Music	6	com.soundcloud.android		
+1	Music	6	com.uma.musicvk		
+1	Music	6	com.miui.fm		
+1	Health & Fitness	7	com.xiaomi.hm.health		
+1	Health & Fitness	7	com.google.android.apps.fitness		
+1	Health & Fitness	7	com.strava		
+1	Health & Fitness	7	com.zwift.android.prod		
+1	Health & Fitness	7	com.garmin.android.apps.connectmobile		
+1	Health & Fitness	7	com.garmin.android.apps.explore		
+1	Health & Fitness	7	com.garmin.connectiq		
+1	Health & Fitness	7	com.invitro.app		
+1	Travel & Airlines	8	ru.aeroflot		
+1	Travel & Airlines	8	ru.s7.android		
+1	Travel & Airlines	8	com.turkishairlines.mobile		
+1	Travel & Airlines	8	com.appkode.pobeda.aero		
+1	Travel & Airlines	8	aero.svo.app		
+1	Travel & Airlines	8	ru.aviasales		
+1	Travel & Airlines	8	net.skyscanner.android.main		
+1	Travel & Airlines	8	ru.ostrovok.android		
+1	Travel & Airlines	8	com.airbnb.android		
+1	Travel & Airlines	8	com.booking		
+1	Travel & Airlines	8	com.outdooractive.Outdooractive		
+1	Travel & Airlines	8	com.pozitron.pegasus		
+1	Accounts & Security	9	com.google.android.apps.authenticator2		
+1	Accounts & Security	9	com.passbolt.mobile.android		
+1	Accounts & Security	9	com.synology.securesignin		
+1	Accounts & Security	9	com.google.android.apps.adm		
+1	Weather	10	com.miui.weather2		
+1	Weather	10	ru.yandex.weatherplugin		
+1	Smart Home	11	com.xiaomi.smarthome		
+1	Smart Home	11	com.huawei.smarthome		
+1	Smart Home	11	com.dreame.smartlife		
+1	Smart Home	11	com.tion.magicair		
+1	Smart Home	11	ru.ufanet.smarthome		
+1	Xiaomi / System Utilities	12	com.miui.calculator		
+1	Xiaomi / System Utilities	12	com.miui.compass		
+1	Xiaomi / System Utilities	12	com.miui.screenrecorder		
+1	Xiaomi / System Utilities	12	com.android.deskclock		
+1	Xiaomi / System Utilities	12	com.android.soundrecorder		
+1	Xiaomi / System Utilities	12	com.xiaomi.calendar		
+1	Xiaomi / System Utilities	12	com.xiaomi.midrop		
+1	Xiaomi / System Utilities	12	com.xiaomi.scanner		
+1	Xiaomi / System Utilities	12	app.lawnchair.play		
+1	App Stores	13	com.aurora.store		
+1	App Stores	13	ru.vk.store		
+1	App Stores	13	com.huawei.appmarket		
+1	App Stores	13	org.fdroid.fdroid		
+1	Games	14	com.blackspoongames.hunting		
+1	Games	14	team.nineone.openloop_app.stage		
+1	Games	14	tech.aml.moneyrun		
+2	Banking & Payments — Russia	1	ru.sberbankmobile		
+2	Banking & Payments — Russia	1	ru.sberbank_sbbol		
+2	Banking & Payments — Russia	1	ru.alfabank.mobile.android		
+2	Banking & Payments — Russia	1	ru.alfadirect.app		
+2	Banking & Payments — Russia	1	ru.tinkoff.investing		
+2	Banking & Payments — Russia	1	ru.tinkoff.sme		
+2	Banking & Payments — Russia	1	com.idamob.tinkoff.android		
+2	Banking & Payments — Russia	1	ru.akbars.mobile		
+2	Banking & Payments — Russia	1	ru.gazprombank.android.mobilebank.app		
+2	Banking & Payments — Russia	1	ru.vtb24.mobilebanking.android		
+2	Banking & Payments — Russia	1	ru.vtb.smb		
+2	Banking & Payments — Russia	1	com.idamobile.android.crediteuropa		
+2	Banking & Payments — Russia	1	ru.nspk.mir.loyalty		
+2	Banking & Payments — Russia	1	ru.nspk.mirpay		
+2	Banking & Payments — Russia	1	ru.nspk.sbpay		
+2	Banking & Payments — Russia	1	ru.yoo.money		
+2	Banking & Payments — Russia	1	ru.mw		
+2	Banking & Payments — Russia	1	com.easypay_fssp		
+2	Banking & Payments — Russia	1	ru.reso.osago		
+2	Banking & Payments — Russia	1	ru.alfastrah.app		
+2	Government & Official — Russia	2	ru.gosuslugi.auto		
+2	Government & Official — Russia	2	ru.gosuslugi.goskey		
+2	Government & Official — Russia	2	ru.gosuslugi.pos		
+2	Government & Official — Russia	2	ru.altarix.mos.pgu		
+2	Government & Official — Russia	2	ru.mosgorpass		
+2	Government & Official — Russia	2	ru.fns.lkfl		
+2	Government & Official — Russia	2	ru.sigma.gisgkh		
+2	Government & Official — Russia	2	ru.technokad.digitalkey		
+2	Government & Official — Russia	2	com.programmisty.emiasapp		
+2	Taxi, Maps & Transit	3	am.ggtaxi.main		
+2	Taxi, Maps & Transit	3	ru.dublgis.dgismobile		
+2	Taxi, Maps & Transit	3	ru.yandex.taxi		
+2	Taxi, Maps & Transit	3	ru.yandex.yandexmaps		
+2	Taxi, Maps & Transit	3	ru.yandex.yandexnavi		
+2	Taxi, Maps & Transit	3	ru.yandex.metro		
+2	Taxi, Maps & Transit	3	ru.mosmetro.metro		
+2	Taxi, Maps & Transit	3	ru.mosparking.appnew		
+2	Taxi, Maps & Transit	3	com.google.android.apps.mapslite		
+2	Taxi, Maps & Transit	3	net.osmand		
+2	Taxi, Maps & Transit	3	net.osmand.plus		
+2	Taxi, Maps & Transit	3	net.osmand.nauticalPlugin		
+2	Taxi, Maps & Transit	3	com.carshering		
+2	Taxi, Maps & Transit	3	ru.yandex.mobile.drive		
+2	Taxi, Maps & Transit	3	ru.mos.app		
+2	Taxi, Maps & Transit	3	ru.rzd.pass		
+2	Taxi, Maps & Transit	3	ru.russianhighways.mobile		
+2	Telecom / ISP — Russia	4	ru.mts.mymts		
+2	Telecom / ISP — Russia	4	ru.yota.android		
+2	Telecom / ISP — Russia	4	com.ertelecom.agent		
+2	Telecom / ISP — Russia	4	com.dartit.RTcabinet		
+2	Telecom / ISP — Russia	4	ru.rostel		
+2	Telecom / ISP — Russia	4	ru.ufanet.myufanet		
+2	Fuel	5	com.gpn.azs		
+2	Fuel	5	ru.tatneft.gasstations		
+2	Fuel	5	ru.yandex.mobile.gasstations		
+2	Delivery & Fast Food	6	ru.dodopizza.app		
+2	Delivery & Fast Food	6	ru.burgerking		
+2	Delivery & Fast Food	6	ru.kfc.kfc_delivery		
+2	Delivery & Fast Food	6	com.deliveryclub		
+2	Delivery & Fast Food	6	pro.tdnm.gurmanica		
+2	Delivery & Fast Food	6	com.tastycoffee.shop		
+2	Delivery & Fast Food	6	ru.digipeople.pickpoint		
+2	Delivery & Fast Food	6	ru.boxberry.mobile		
+2	Delivery & Fast Food	6	com.logistic.sdek		
+2	Delivery & Fast Food	6	ru.dpd.recipient		
+2	Delivery & Fast Food	6	com.loyaltyplant.partner.subway		
+2	Groceries & Retail Chains	7	ru.pyaterochka.app.browser		
+2	Groceries & Retail Chains	7	ru.perekrestok.app		
+2	Groceries & Retail Chains	7	ru.myauchan.droid		
+2	Groceries & Retail Chains	7	ru.myspar		
+2	Groceries & Retail Chains	7	ru.globus.app		
+2	Groceries & Retail Chains	7	ru.tander.magnit		
+2	Groceries & Retail Chains	7	ru.av.vkusomania		
+2	Groceries & Retail Chains	7	ru.vkusvill		
+2	Groceries & Retail Chains	7	com.icemobile.lenta.prod		
+2	Groceries & Retail Chains	7	ru.x5.omni		
+2	Groceries & Retail Chains	7	club.chizhik		
+2	Groceries & Retail Chains	7	ru.apteka		
+2	Groceries & Retail Chains	7	ru.getpharma.eapteka		
+2	Groceries & Retail Chains	7	com.apteka.sklad		
+2	Marketplaces & Shopping	8	ru.beru.android		
+2	Marketplaces & Shopping	8	com.wildberries.ru		
+2	Marketplaces & Shopping	8	ru.aliexpress.buyer		
+2	Marketplaces & Shopping	8	com.avito.android		
+2	Marketplaces & Shopping	8	com.lamoda.lite		
+2	Marketplaces & Shopping	8	goldapple.ru.goldapple.customers		
+2	Marketplaces & Shopping	8	com.gipfel.ecommers		
+2	Marketplaces & Shopping	8	com.tradeinnsl		
+2	Marketplaces & Shopping	8	ru.ostin.android.app		
+3	Banking — KZ/KG	1	kg.bta.mobilebank2		
+3	Banking — KZ/KG	1	kz.kaspi.mobile		
+3	Banking — KZ/KG	1	com.maanavan.mb_kyrgyzstan		
+3	Banking — KZ/KG	1	kg.beeline.odp		
+3	Banking — KZ/KG	1	kz.beeline.odp		
+3	Banking — KZ/KG	1	com.intervale.baitushum		
+3	Marketplaces & Shopping — KZ/KG	2	com.kazanexpress.ke_app		
+3	Government — KZ/KG	3	kz.mobile.mgov		
+3	Government — KZ/KG	3	kz.mobile.mgov.business		

@@ -2,7 +2,15 @@
 # copies, and migration working files. Everything generated at
 # runtime lives under state/ so it's all in one visible place; none
 # of it is shared across machines/repos.
-state/
+#
+# Exception: *_layout.tsv is the curated home-screen layout tree (real
+# design work, not disposable per-run state) — worth versioning like
+# templates/*.tsv is. Everything else under state/migration/ (pulled
+# APKs, package scans, generated backups, caches) stays ignored.
+state/*
+!state/migration/
+state/migration/*
+!state/migration/*_layout.tsv
 __pycache__/
 *.pyc
 .venv/

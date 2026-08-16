@@ -628,11 +628,33 @@ def step_layout_plan(dest_serial):
 
     dest_serial = resolve_serial(dest_serial, "new")
 
+    # Full package list, not just -3 (third-party) — the dock/hotseat
+    # commonly wants system apps like the dialer, SMS, and browser, which
+    # -3 silently excludes. We filter out only what the device's own
+    # debloat catalog already classifies as bloat (absent/disabled), so
+    # the pool is "everything actually worth seeing on a home screen"
+    # rather than every OS-internal package.
     installed = subprocess.run(
-        ["adb", "-s", dest_serial, "shell", "pm", "list", "packages", "-3"],
+        ["adb", "-s", dest_serial, "shell", "pm", "list", "packages"],
         capture_output=True, text=True,
     ).stdout
     pkgs = sorted(l.replace("package:", "").strip() for l in installed.splitlines() if l.strip())
+
+    bloat = set()
+    catalog_path = CATALOGS_DIR / f"{dest_serial}.tsv"
+    if catalog_path.exists():
+        with open(catalog_path, newline="") as f:
+            for row in csv.DictReader(f, delimiter="\t"):
+                if row.get("state") in ("absent", "disabled"):
+                    bloat.add(row["package"])
+        before = len(pkgs)
+        pkgs = [p for p in pkgs if p not in bloat]
+        say(f"Full device package list: {before} — filtered out {before - len(pkgs)} "
+            f"catalogued as bloat ({catalog_path.name}), {len(pkgs)} remain.")
+    else:
+        say(f"No catalog found at {catalog_path.relative_to(REPO_ROOT)} to filter bloat — "
+            f"using the full unfiltered list of {len(pkgs)} packages (run debloat first "
+            f"for a cleaner pool).")
 
     names = {}
     if pkgs and ask_yes_no(
